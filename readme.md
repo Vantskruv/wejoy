@@ -1,7 +1,6 @@
 # wejoy v0.1
 
-'wejoy' is a tool to read physical joystick devices, create virtual joystick devices and output keyboard presses on a Linux system.
-* It uses helpful sourcecode which in somewhat degree is modified:
+'wejoy' is a tool to read physical joystick devices, create virtual joystick devices and output keyboard presses on a Linux system. It uses helpful sourcecode which in somewhat degree is modified:
 * https://github.com/tuomasjjrasanen/libsuinput
 * https://github.com/drewnoakes/joystick
 * https://github.com/EliasD/unnamed_lua_binder/
