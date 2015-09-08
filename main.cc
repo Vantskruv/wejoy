@@ -162,7 +162,7 @@ bool populate_devices(LuaScript& lScript)
 		{
 			std::cout << "WARNING: Joystick " << std::hex << dList[i][0] << ":" << std::hex << dList[i][1] << " is not found.\n";
 			delete cJoy;
-			continue;
+			return false;
 		}
 
 		GLOBAL::joyList.push_back(cJoy);
@@ -195,6 +195,7 @@ bool populate_virtual_devices(LuaScript& lScript)
 	for(unsigned int i=0; i<dList.size(); i++)
 	{
 		CVirtualJoy* vJoy = new CVirtualJoy(dList[i][0], dList[i][1]);
+		if (!vJoy->isOpen()) return false;
 		GLOBAL::vJoyList.push_back(vJoy);
 	}//for
 
@@ -231,8 +232,8 @@ int main(int argc, char** argv)
 	LuaScript lScript(argv[1]);
 	if(!lScript.isOpen()) return 0;
 
-	populate_devices(lScript);
-	populate_virtual_devices(lScript);
+	if (!populate_devices(lScript)) exit(0);
+	if (!populate_virtual_devices(lScript)) exit(0);
 	link_lua_functions(lScript);
 
 	std::cout << "Press 'q' and then 'ENTER' to quit!\n";	

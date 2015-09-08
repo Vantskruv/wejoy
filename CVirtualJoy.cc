@@ -48,6 +48,12 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes)
 	memset(&user_dev, 0, sizeof(struct uinput_user_dev));
 	std::string dName = "WeJoy Virtual Device " + std::to_string(deviceid);
 	strcpy(user_dev.name, dName.c_str());
+
+	for(unsigned int i=0; i<_axes && i<AXES_SIZE; i++) {
+		user_dev.absmax[i]=32767;
+		user_dev.absmin[i]=-32767;
+	}
+
 	user_dev.id.bustype = BUS_VIRTUAL;	//TODO Should we use BUS_VIRTUAL instead of BUS_USB?
 	//user_dev.id.vendor = 0x06a3;
 	//user_dev.id.product = 0x0764;
