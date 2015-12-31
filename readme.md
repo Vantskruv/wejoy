@@ -37,6 +37,7 @@ Where 5.x is the available liblua version of your distro.
 # Compile ----
 * $ sh make.sh
 * This will create an executable called 'wejoy' which is run from the terminal.
+* NOTE: If another version than liblua 5.2 is installed, the make.sh needs to be edited for the current version installed.
 
 
 # Usage ----
