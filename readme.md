@@ -14,7 +14,24 @@
 
 
 # Known requirements ----
-liblua5.2
+* liblua version 5.2 or later.
+* libudev
+
+Development files for liblua and libudev are required for compliation:
+
+1. Search for which version of liblua you may have in your version of Linux distribution:
+
+$ apt-cache search liblua
+
+You may have liblua5.2 or a newer version.
+
+Then install the developments files of you version of liblua and libudev i.e:
+* $ sudo apt-get install liblua5.x-dev libudev-dev
+
+Also install the shared libraries of liblua and libudev i.e:
+* $ sudo apt-get install liblua5.x-0 libudev1
+
+Where 5.x is the available liblua version of your distro.
 
 
 # Compile ----
