@@ -2,8 +2,8 @@
 #define BUTTONS_REF_H
 #include <linux/uinput.h>	//Reference to keycodes
 
-#define BUTTONS_SIZE		54
-#define AXES_SIZE			19
+#define BUTTONS_SIZE		53
+#define AXES_SIZE		19
 
 namespace buttons_ref
 {
@@ -22,7 +22,6 @@ BTN_BASE4,
 BTN_BASE5,
 BTN_BASE6,
 BTN_DEAD,
-BTN_TRIGGER_HAPPY,
 BTN_TRIGGER_HAPPY1,
 BTN_TRIGGER_HAPPY2,
 BTN_TRIGGER_HAPPY3,
