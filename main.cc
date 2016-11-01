@@ -36,7 +36,7 @@ int l_send_keyboard_event(lua_State* L)
 //Called from user via lua script
 int l_get_joy_button_status(lua_State* L)
 {
-	int id = lua_tonumber(L, 1);
+	unsigned int id = lua_tonumber(L, 1);
 	int type = lua_tonumber(L, 2);
 	if(id>=GLOBAL::joyList.size())
 	{
@@ -53,7 +53,7 @@ int l_get_joy_button_status(lua_State* L)
 //Called from user via lua script
 int l_get_joy_axis_status(lua_State* L)
 {
-	int id = lua_tonumber(L, 1);
+	unsigned int id = lua_tonumber(L, 1);
 	int type = lua_tonumber(L, 2);
 	if(id>=GLOBAL::joyList.size())
 	{
@@ -69,7 +69,7 @@ int l_get_joy_axis_status(lua_State* L)
 //Called from user via lua script
 int l_send_vjoy_button_event(lua_State* _L)
 {
-	int id = lua_tonumber(_L, 1);
+	unsigned int id = lua_tonumber(_L, 1);
 	int type = lua_tonumber(_L, 2);
 	int value = lua_tonumber(_L, 3);
 
@@ -85,7 +85,7 @@ int l_send_vjoy_button_event(lua_State* _L)
 //Called from user via lua script
 int l_send_vjoy_axis_event(lua_State* _L)
 {
-	int id = lua_tonumber(_L, 1);
+	unsigned int id = lua_tonumber(_L, 1);
 	int type = lua_tonumber(_L, 2);
 	int value = lua_tonumber(_L, 3);
 
@@ -102,7 +102,7 @@ int l_send_vjoy_axis_event(lua_State* _L)
 //Called from user via lua script
 int l_get_vjoy_button_status(lua_State* L)
 {
-	int id = lua_tonumber(L, 1);
+	unsigned int id = lua_tonumber(L, 1);
 	int type = lua_tonumber(L, 2);
 	if(id>=GLOBAL::vJoyList.size())
 	{
@@ -119,7 +119,7 @@ int l_get_vjoy_button_status(lua_State* L)
 //Called from user via lua script
 int l_get_vjoy_axis_status(lua_State* L)
 {
-	int id = lua_tonumber(L, 1);
+	unsigned int id = lua_tonumber(L, 1);
 	int type = lua_tonumber(L, 2);
 	if(id>=GLOBAL::vJoyList.size())
 	{
