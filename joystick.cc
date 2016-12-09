@@ -13,6 +13,7 @@
 
 #include "joystick.h"
 
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -39,6 +40,7 @@ typedef uint16_t        		__u16;
 #define JSIOCGBTNMAP            _IOR('j', 0x34, __u16[KEY_MAX - BTN_MISC + 1])  /* get button mapping */
 #define JSIOCGAXMAP             _IOR('j', 0x32, __u8[ABS_CNT])					/* get axis mapping */
 
+
 Joystick::Joystick(int joystickNumber)
 {
 	
@@ -55,26 +57,54 @@ Joystick::Joystick(int joystickNumber)
 
 Joystick::Joystick(int _vendorid, int _productid)
 {
-	int cDevice = 0;
-	while(1)
+	std::vector<unsigned int> lJSDevices;
+	std::string dir("/dev/input/");
+
+	//Open '/dev/input' directory
+	DIR *dp;
+	struct dirent *dirp;
+	if((dp  = opendir(dir.c_str())) == NULL)
 	{
-		std::stringstream path;
-		path << "/dev/input/js" << cDevice;
-		std::ifstream in(path.str().c_str());
-		if(!in) break;
-		
-		if(!retrieveID(cDevice, vendorid, productid)) break;
+        std::cout << "Error(" << errno << ") opening " << dir << '\n';
+        return;
+    }
+
+	//Read '/dev/input' directory
+    while ((dirp = readdir(dp)) != NULL)
+	{
+    	std::string cFile(dirp->d_name);
+		//If a file that begins with 'js' is found
+		if(cFile.compare(0, 2, "js") == 0)
+		{
+			cFile = cFile.substr(2, std::string::npos);
+			int num;
+			//Add the trailing number to the device list after js if the number is valid
+			try
+			{
+				num = std::stoi(cFile);
+			}
+			catch(...)
+			{
+				continue;
+			}
+			lJSDevices.push_back(num);
+		}//if
+    }
+    closedir(dp);
+
+
+	for(unsigned int i=0; i<lJSDevices.size(); i++)
+	{
+		if(!retrieveID(lJSDevices[i], vendorid, productid)) continue;
 		if(vendorid == _vendorid && productid == _productid)
 		{
-			joyNum = cDevice;
+			joyNum = lJSDevices[i];
 			openPath("/dev/input/js" + std::to_string(joyNum));
 			_get_joystick_mapping(buttonMappings, axisMappings);
 			axesData.resize(axisMappings.size(), 0);
 			break;
 		}//if
-	
-		cDevice++;
-	}//while
+	}//for
 }
 
 void Joystick::openPath(std::string devicePath)
