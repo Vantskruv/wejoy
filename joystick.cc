@@ -67,6 +67,9 @@ Joystick::Joystick(std::string _name, int index) {
                 closeJoy();
                 continue;
             }
+            //TODO: bring back a version of this that still uses vendor and product ids, to make sure we are backwards compatible.
+            //TODO: libevdev_get_id_vendor
+            //TODO: libevdev_get_id_product
             name = libevdev_get_name(_dev);
             if (name == _name) {
                 if (current == index) {
@@ -111,6 +114,9 @@ const uint64_t Joystick::get_axes_notify_flags() {
 int Joystick::get_button_status(int type) {
     return (buttonFlags & (1ul << type)) != 0;
 }
+
+//TODO: https://www.freedesktop.org/software/libevdev/doc/latest/group__bits.html#ga6259f4c6bdba950329ff9cd48c2ef8a3
+//TODO: Look at libevdev_fetch_event_value(), and wrap everything below around that instead of keeping an internal state.
 
 int Joystick::get_axis_status(int _i) {
     return axesData[_i];

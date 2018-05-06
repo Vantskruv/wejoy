@@ -20,6 +20,7 @@ void updateThread(LuaScript &lScript) {
     int rc = 1;
     while (bPoll)
         for (unsigned int i = 0; i < GLOBAL::joyList.size(); i++) {
+            //TODO: look into using libevdev_event_code_get_name to generate function names, to make it so that we can use names for some axis, instead of just relying on ids.
             struct input_event ev;
             rc = libevdev_next_event(GLOBAL::joyList[i]->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
@@ -31,6 +32,12 @@ void updateThread(LuaScript &lScript) {
                                                  ev.value);
                 }
             }
+
+            // printf("Event: %s %s %i %i %d\n",
+            // 		libevdev_event_type_get_name(ev.type),
+            // 		libevdev_event_code_get_name(ev.type, ev.code),
+            // 		ev.type, ev.code,
+            // 		ev.value);
         }//for
 
 }
