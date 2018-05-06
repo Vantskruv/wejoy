@@ -42,7 +42,6 @@ typedef uint16_t __u16;
 #define JSIOCGAXMAP             _IOR('j', 0x32, __u8[ABS_CNT])                    /* get axis mapping */
 
 Joystick::Joystick(std::string _name, int index) {
-    std::vector<unsigned int> lJSDevices;
     std::string dir("/dev/input/");
 
     //Open '/dev/input' directory
@@ -53,46 +52,32 @@ Joystick::Joystick(std::string _name, int index) {
         return;
     }
 
+    int current = 0;
     //Read '/dev/input' directory
     while ((dirp = readdir(dp)) != NULL) {
         std::string cFile(dirp->d_name);
         //If a file that begins with 'js' is found
         if (cFile.compare(0, 5, "event") == 0) {
-            cFile = cFile.substr(5, std::string::npos);
-            int num;
-            //Add the trailing number to the device list after js if the number is valid
-            try {
-                num = std::stoi(cFile);
-            }
-            catch (...) {
+            openPath(cFile);
+            int rc = 1;
+            struct libevdev *_dev = NULL;
+            rc = libevdev_new_from_fd(_fd, &_dev);
+            if (rc < 0) {
+                fprintf(stderr, "Failed to init libevdev (%s)\n", strerror(-rc));
+                //skip invalid devices
                 continue;
             }
-            lJSDevices.push_back(num);
+            name = libevdev_get_name(_dev);
+            if (name == _name) {
+                if (current == index) {
+                    dev = _dev;
+                    break;
+                }
+                current++;
+            }//if
         }//if
     }
     closedir(dp);
-
-    int current = 0;
-    for (unsigned int i = 0; i < lJSDevices.size(); i++) {
-        openPath("/dev/input/event" + std::to_string(lJSDevices[i]));
-        int rc = 1;
-        struct libevdev *_dev = NULL;
-        rc = libevdev_new_from_fd(_fd, &_dev);
-        if (rc < 0) {
-            fprintf(stderr, "Failed to init libevdev (%s)\n", strerror(-rc));
-            //skip invalid devices
-            continue;
-        }
-        name = libevdev_get_name(_dev);
-        if (name == _name) {
-            if (current == index) {
-                joyNum = lJSDevices[i];
-                dev = _dev;
-                break;
-            }
-            current++;
-        }//if
-    }//for
 }
 
 void Joystick::openPath(std::string devicePath) {

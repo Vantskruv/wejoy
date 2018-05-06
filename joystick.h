@@ -32,7 +32,6 @@ private:
 
     struct libevdev *dev = NULL;
     int _fd = -1;
-    unsigned int joyNum;
     std::string name;
     int productid;
     std::string _devicePath;
@@ -71,8 +70,6 @@ public:
     void closeJoy();
 
     void setPath(std::string);
-
-    unsigned int getJoyNum() { return joyNum; };
 
     std::string getName() { return name; };
 
