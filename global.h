@@ -6,11 +6,10 @@
 #include "CVirtualJoy.h"
 #include "CVirtualKeyboard.h"
 
-namespace GLOBAL
-{
-	std::vector<Joystick*> joyList;
-	std::vector<CVirtualJoy*> vJoyList;
-	CVirtualKeyboard vKeyboard;
+namespace GLOBAL {
+    std::vector<Joystick *> joyList;
+    std::vector<CVirtualJoy *> vJoyList;
+    CVirtualKeyboard vKeyboard;
 }
 
 #endif
