@@ -23,6 +23,7 @@
 
 #include <vector>
 #include "unistd.h"
+#include <libevdev-1.0/libevdev/libevdev.h>
 
 #include <stdexcept>
 #include <cstring>
@@ -40,21 +41,7 @@ typedef uint16_t __u16;
 #define JSIOCGBTNMAP            _IOR('j', 0x34, __u16[KEY_MAX - BTN_MISC + 1])  /* get button mapping */
 #define JSIOCGAXMAP             _IOR('j', 0x32, __u8[ABS_CNT])                    /* get axis mapping */
 
-
-Joystick::Joystick(int joystickNumber) {
-
-    if (!retrieveID(joystickNumber, vendorid, productid)) return;
-    joyNum = joystickNumber;
-
-    std::stringstream sstm;
-    sstm << "/dev/input/js" << joystickNumber;
-    openPath(sstm.str());
-
-    _get_joystick_mapping(buttonMappings, axisMappings);
-    axesData.resize(axisMappings.size(), 0);
-}
-
-Joystick::Joystick(int _vendorid, int _productid) {
+Joystick::Joystick(std::string _name, int index) {
     std::vector<unsigned int> lJSDevices;
     std::string dir("/dev/input/");
 
@@ -70,8 +57,8 @@ Joystick::Joystick(int _vendorid, int _productid) {
     while ((dirp = readdir(dp)) != NULL) {
         std::string cFile(dirp->d_name);
         //If a file that begins with 'js' is found
-        if (cFile.compare(0, 2, "js") == 0) {
-            cFile = cFile.substr(2, std::string::npos);
+        if (cFile.compare(0, 5, "event") == 0) {
+            cFile = cFile.substr(5, std::string::npos);
             int num;
             //Add the trailing number to the device list after js if the number is valid
             try {
@@ -85,15 +72,25 @@ Joystick::Joystick(int _vendorid, int _productid) {
     }
     closedir(dp);
 
-
+    int current = 0;
     for (unsigned int i = 0; i < lJSDevices.size(); i++) {
-        if (!retrieveID(lJSDevices[i], vendorid, productid)) continue;
-        if (vendorid == _vendorid && productid == _productid) {
-            joyNum = lJSDevices[i];
-            openPath("/dev/input/js" + std::to_string(joyNum));
-            _get_joystick_mapping(buttonMappings, axisMappings);
-            axesData.resize(axisMappings.size(), 0);
-            break;
+        openPath("/dev/input/event" + std::to_string(lJSDevices[i]));
+        int rc = 1;
+        struct libevdev *_dev = NULL;
+        rc = libevdev_new_from_fd(_fd, &_dev);
+        if (rc < 0) {
+            fprintf(stderr, "Failed to init libevdev (%s)\n", strerror(-rc));
+            //skip invalid devices
+            continue;
+        }
+        name = libevdev_get_name(_dev);
+        if (name == _name) {
+            if (current == index) {
+                joyNum = lJSDevices[i];
+                dev = _dev;
+                break;
+            }
+            current++;
         }//if
     }//for
 }
@@ -101,7 +98,6 @@ Joystick::Joystick(int _vendorid, int _productid) {
 void Joystick::openPath(std::string devicePath) {
     _fd = open(devicePath.c_str(), O_RDONLY | O_NONBLOCK);
     _devicePath = devicePath;
-
 }
 
 void Joystick::setPath(std::string devicePath) {
@@ -137,28 +133,6 @@ int Joystick::get_axis_status(int _i) {
     return axesData[_i];
 }
 
-
-bool Joystick::readJoy(JoystickEvent *event) {
-    int bytes = read(_fd, event, sizeof(*event));
-
-
-    if (bytes == -1)
-        return false;
-
-
-    if (event->type & JS_EVENT_BUTTON) {
-        buttonFlags = (event->value) ? (buttonFlags | 1ul << event->number) : (buttonFlags & ~(1uL << event->number));
-    }//if
-    else if (event->type & JS_EVENT_AXIS) {
-        axesData[event->number] = event->value;
-        axesNotifyFlags = 1uL << event->number;
-    }//if
-
-
-    // NOTE if this condition is not met, we're probably out of sync and this
-    // Joystick instance is likely unusable
-    return bytes == sizeof(*event);
-}
 
 void Joystick::_get_joystick_mapping(std::vector<int> &_buttons, std::vector<int> &_axes) {
     uint8_t num_button = 0;
@@ -223,53 +197,4 @@ bool Joystick::isFound() {
 Joystick::~Joystick() {
     if (_fd >= 0) close(_fd);
 };
-
-
-/*
-#define MAX_DEVICES 32
-void Joystick::retrieveJSPaths(int* indexes)
-{
-	int k = 0;
-	while(k<MAX_DEVICES)
-	{
-		std::stringstream path;
-		path << "/dev/input/js" << k;
-		std::ifstream in(path.str().c_str());
-		if(!in) break;
-		indexes[k] = k;
-		k++;
-	}//while
-	indexes[k] = -1;
-}
-*/
-
-bool Joystick::retrieveID(int index, int &_vendorid, int &_productid) {
-    // Use udev to look up the product and manufacturer IDs
-    struct udev *udev = udev_new();
-    if (udev) {
-        char sysname[32];
-        std::snprintf(sysname, sizeof(sysname), "js%u", index);
-        struct udev_device *dev = udev_device_new_from_subsystem_sysname(udev, "input", sysname);
-        dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
-        if (!dev) {
-            std::cout << "Unable to find parent USB device index " << index << std::endl;
-            udev_unref(udev);
-            return false;
-        }
-
-        const std::string s_vendorid = udev_device_get_sysattr_value(dev, "idVendor");
-        const std::string s_productid = udev_device_get_sysattr_value(dev, "idProduct");
-        _vendorid = strtoul(s_vendorid.c_str(), NULL, 16);
-        _productid = strtoul(s_productid.c_str(), NULL, 16);
-
-        udev_device_unref(dev);
-        udev_unref(udev);
-    } else {
-        std::cout << "Cannot create udev" << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
 

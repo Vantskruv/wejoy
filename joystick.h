@@ -24,65 +24,16 @@
 
 
 /**
- * Encapsulates all data relevant to a sampled joystick event.
- */
-class JoystickEvent {
-public:
-    /**
-    * The timestamp of the event, in milliseconds.
-    */
-    unsigned int time;
-
-    /**
-    * The value associated with this joystick event.
-    * For buttons this will be either 1 (down) or 0 (up).
-    * For axes, this will range between -32768 and 32767.
-    */
-    short value;
-
-    /**
-    * The event type.
-    */
-    unsigned char type;
-
-    /**
-    * The axis/button number.
-    */
-    unsigned char number;
-
-    /**
-    * Returns true if this event is the result of a button press.
-    */
-    bool isButton() {
-        return (type & JS_EVENT_BUTTON) != 0;
-    }
-
-    /**
-    * Returns true if this event is the result of an axis movement.
-    */
-    bool isAxis() {
-        return (type & JS_EVENT_AXIS) != 0;
-    }
-
-    /**
-    * Returns true if this event is part of the initial state obtained when
-    * the joystick is first connected to.
-    */
-    bool isInitialState() {
-        return (type & JS_EVENT_INIT) != 0;
-    }
-};
-
-/**
  * Represents a joystick device. Allows data to be sampled from it.
  */
 class Joystick {
 private:
     void openPath(std::string);
 
+    struct libevdev *dev = NULL;
     int _fd = -1;
     unsigned int joyNum;
-    int vendorid;
+    std::string name;
     int productid;
     std::string _devicePath;
     uint64_t buttonFlags = 0;                //Curent values of all buttons
@@ -103,7 +54,7 @@ public:
     */
     Joystick(int joystickNumber);
 
-    Joystick(int, int);
+    Joystick(std::string, int);
 
     /**
     * Initialises an instance for the joystick device specified.
@@ -115,12 +66,6 @@ public:
     */
     bool isFound();
 
-    /**
-    * Attempts to populate the provided JoystickEvent instance with data
-    * from the joystick. Returns true if data is available, otherwise false.
-    */
-    bool readJoy(JoystickEvent *event);
-
     void openJoy();
 
     void closeJoy();
@@ -129,9 +74,9 @@ public:
 
     unsigned int getJoyNum() { return joyNum; };
 
-    int getVendorID() { return vendorid; };
+    std::string getName() { return name; };
 
-    int getProductID() { return productid; };
+    struct libevdev *get_dev() { return dev; }
 
     void addListener(void(*)(void *, int, int, int), int, int);        //Listener, event and type
 
@@ -152,9 +97,6 @@ public:
     const uint64_t get_axes_notify_flags();
 
     int get_axis_value(int _i);
-
-
-    static bool retrieveID(int, int &, int &);
 };
 
 #endif

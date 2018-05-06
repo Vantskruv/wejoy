@@ -3,6 +3,13 @@
 
 #include "LuaScript.h"
 #include "global.h"
+#include <libevdev-1.0/libevdev/libevdev.h>
+
+class LuaStick {
+public:
+    std::string name;
+    int index;
+};
 
 bool bPoll = true;
 
@@ -10,18 +17,20 @@ void updateThread(LuaScript &lScript) {
     //Sleep one second to give the X11 system time to adapt.
     sleep(1);
 
-    JoystickEvent event;
+    int rc = 1;
     while (bPoll)
         for (unsigned int i = 0; i < GLOBAL::joyList.size(); i++) {
-            usleep(1000);
-            if (GLOBAL::joyList[i]->readJoy(&event)) {
-                if (event.isButton())
-                    lScript.call_device_function(
-                            "d" + std::to_string(i) + "_b" + std::to_string(event.number) + "_event", event.value);
-                else if (event.isAxis())
-                    lScript.call_device_function(
-                            "d" + std::to_string(i) + "_a" + std::to_string(event.number) + "_event", event.value);
-            }//if
+            struct input_event ev;
+            rc = libevdev_next_event(GLOBAL::joyList[i]->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
+            if (rc == 0) {
+                if (ev.type == 1) {
+                    lScript.call_device_function("d" + std::to_string(i) + "_b" + std::to_string(ev.code) + "_event",
+                                                 ev.value);
+                } else if (ev.type == 3) {
+                    lScript.call_device_function("d" + std::to_string(i) + "_a" + std::to_string(ev.code) + "_event",
+                                                 ev.value);
+                }
+            }
         }//for
 
 }
@@ -125,14 +134,15 @@ int l_get_vjoy_axis_status(lua_State *L) {
 //Populate a list of physical devices defined in user lua file
 bool populate_devices(LuaScript &lScript) {
     //Get the data from the user lua file
-    std::vector<std::array<int, 2>> dList;
-    std::array<int, 2> val;
+    std::vector<LuaStick> dList;
+    LuaStick val;
     int cIndex = 0;
     while (1) {
+        val = LuaStick();
         bool noerr;
-        val[0] = lScript.get<int>("devices.d" + std::to_string(cIndex) + ".vendorid", noerr);
+        val.name = lScript.get<std::string>("devices.d" + std::to_string(cIndex) + ".name", noerr);
         if (!noerr) break;
-        val[1] = lScript.get<int>("devices.d" + std::to_string(cIndex) + ".productid", noerr);
+        val.index = lScript.get<int>("devices.d" + std::to_string(cIndex) + ".index", noerr);
         if (!noerr) break;
 
         dList.push_back(val);
@@ -143,10 +153,9 @@ bool populate_devices(LuaScript &lScript) {
 
     //Populate the list of found joysticks
     for (unsigned int i = 0; i < dList.size(); i++) {
-        Joystick *cJoy = new Joystick(dList[i][0], dList[i][1]);
+        Joystick *cJoy = new Joystick(dList[i].name, dList[i].index);
         if (!cJoy->isFound()) {
-            std::cout << "WARNING: Joystick " << std::hex << dList[i][0] << ":" << std::hex << dList[i][1]
-                      << " is not found.\n";
+            std::cout << "WARNING: Joystick " << dList[i].name << "[" << dList[i].index << "] is not found.\n";
             delete cJoy;
             return false;
         }
@@ -198,8 +207,6 @@ void link_lua_functions(LuaScript &lScript) {
 
 
 int main(int argc, char **argv) {
-    //TODO I need to search for information on which buttons and axes is required to correctly be found in applications, as sometimes i.e. axes are found in system, but not by applications.
-
     if (argc < 2) {
         std::cout << "Please type the path of your lua file.\n";
         std::cout << "I.e. 'wejoy config.lua'\n";
