@@ -26,6 +26,8 @@ public:
 
     std::vector<std::string> getTableKeys(const std::string &name);
 
+    std::vector<std::string> getAllGlobals();
+
     //void call_device_function(const device_function&, int);
     void call_device_function(const std::string &, int);
 

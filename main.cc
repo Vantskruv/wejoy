@@ -140,24 +140,19 @@ int l_get_vjoy_axis_status(lua_State *L) {
 
 //Populate a list of physical devices defined in user lua file
 bool populate_devices(LuaScript &lScript) {
-    //Get the data from the user lua file
     std::vector<LuaStick> dList;
     LuaStick val;
-    int cIndex = 0;
-    while (1) {
+    //TODO: refactor so this accepts arbituary names, and saves the name to the joystick
+    for (std::string s : lScript.getTableKeys("devices")) {
         val = LuaStick();
         bool noerr;
-        val.name = lScript.get<std::string>("devices.d" + std::to_string(cIndex) + ".name", noerr);
+        val.name = lScript.get<std::string>("devices." + s + ".name", noerr);
         if (!noerr) break;
-        val.index = lScript.get<int>("devices.d" + std::to_string(cIndex) + ".index", noerr);
+        val.index = lScript.get<int>("devices." + s + ".index", noerr);
         if (!noerr) break;
 
         dList.push_back(val);
-
-        cIndex++;
-    }//for
-
-
+    }
     //Populate the list of found joysticks
     for (unsigned int i = 0; i < dList.size(); i++) {
         Joystick *cJoy = new Joystick(dList[i].name, dList[i].index);
@@ -177,19 +172,16 @@ bool populate_devices(LuaScript &lScript) {
 bool populate_virtual_devices(LuaScript &lScript) {
     std::vector<std::array<int, 2>> dList;
     std::array<int, 2> val;
-    int cIndex = 0;
-    while (1) {
+    for (std::string s : lScript.getTableKeys("v_devices")) {
+        val = LuaStick();
         bool noerr;
-
-        val[0] = lScript.get<int>("v_devices.v" + std::to_string(cIndex) + ".buttons", noerr);
+        val[0] = lScript.get<int>("v_devices." + s + ".buttons", noerr);
         if (!noerr) break;
-        val[1] = lScript.get<int>("v_devices.v" + std::to_string(cIndex) + ".axes", noerr);
+        val[1] = lScript.get<int>("v_devices." + s + ".axes", noerr);
         if (!noerr) break;
 
         dList.push_back(val);
-
-        cIndex++;
-    }//for
+    }
 
     //Create and populate the list of user defined virtual devices
     for (unsigned int i = 0; i < dList.size(); i++) {

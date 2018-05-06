@@ -62,7 +62,7 @@ Joystick::Joystick(std::string _name, int index) {
             struct libevdev *_dev = NULL;
             rc = libevdev_new_from_fd(_fd, &_dev);
             if (rc < 0) {
-                fprintf(stderr, "Failed to init libevdev (%s)\n", strerror(-rc));
+                fprintf(stderr, "Failed to init device /dev/input/%s (%s)\n", dirp->d_name, strerror(-rc));
                 //skip invalid devices
                 closeJoy();
                 continue;

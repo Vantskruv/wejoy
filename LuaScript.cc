@@ -28,6 +28,18 @@ void LuaScript::printError(const std::string &variableName, const std::string &r
     std::cout << "Error: can't get [" << variableName << "]. " << reason << std::endl;
 }
 
+std::vector<std::string> LuaScript::getAllGlobals() {
+    std::vector<std::string> globals;
+    lua_pushglobaltable(L);
+    lua_pushnil(L);
+    while(lua_next(L, -2) != 0) {
+        globals.emplace_back(lua_tostring(L, -2));
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+    return globals;
+}
+
 std::vector<int> LuaScript::getIntVector(const std::string &name) {
     std::vector<int> v;
     lua_gettostack(name.c_str());
