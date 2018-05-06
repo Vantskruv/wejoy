@@ -15,8 +15,7 @@ public:
     void send_key_event(int, int);
 
     bool isOpen();
-
-    CVirtualKeyboard();    //buttons, axes
+    void init();
     ~CVirtualKeyboard();
 
 };

@@ -4,7 +4,7 @@
 #include <iostream> //cout
 
 
-CVirtualKeyboard::CVirtualKeyboard() {
+void CVirtualKeyboard::init() {
     std::cout << "Opening virtual keyboard device.\n";
     //Get a device descriptor
     fd = suinput_open();
@@ -28,9 +28,7 @@ CVirtualKeyboard::CVirtualKeyboard() {
     memset(&user_dev, 0, sizeof(struct uinput_user_dev));
     std::string dName = "WeJoy Virtual Keyboard";
     strcpy(user_dev.name, dName.c_str());
-    user_dev.id.bustype = BUS_VIRTUAL; //TODO Should we use BUS_VIRTUAL instead BUS_USB?
-    //user_dev.id.vendor = 0x06a3;
-    //user_dev.id.product = 0x0764;
+    user_dev.id.bustype = BUS_VIRTUAL;
     user_dev.id.version = 1;
     int r = suinput_create(fd, &user_dev);
     if (r) {
@@ -42,7 +40,6 @@ CVirtualKeyboard::CVirtualKeyboard() {
 
     std::cout << "Successfully created virtual keyboard device.\n";
 }
-
 
 CVirtualKeyboard::~CVirtualKeyboard() {
     suinput_destroy(fd);

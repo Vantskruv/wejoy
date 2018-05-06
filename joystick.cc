@@ -51,20 +51,20 @@ Joystick::Joystick(std::string _name, int index) {
         std::cout << "Error(" << errno << ") opening " << dir << '\n';
         return;
     }
-
     int current = 0;
     //Read '/dev/input' directory
     while ((dirp = readdir(dp)) != NULL) {
         std::string cFile(dirp->d_name);
-        //If a file that begins with 'js' is found
+        //If a file that begins with 'event' is found
         if (cFile.compare(0, 5, "event") == 0) {
-            openPath(cFile);
+            openPath("/dev/input/"+cFile);
             int rc = 1;
             struct libevdev *_dev = NULL;
             rc = libevdev_new_from_fd(_fd, &_dev);
             if (rc < 0) {
                 fprintf(stderr, "Failed to init libevdev (%s)\n", strerror(-rc));
                 //skip invalid devices
+                closeJoy();
                 continue;
             }
             name = libevdev_get_name(_dev);
@@ -75,6 +75,7 @@ Joystick::Joystick(std::string _name, int index) {
                 }
                 current++;
             }//if
+            closeJoy();
         }//if
     }
     closedir(dp);
@@ -108,10 +109,7 @@ const uint64_t Joystick::get_axes_notify_flags() {
 }
 
 int Joystick::get_button_status(int type) {
-//	uint64_t check = (value) ? (get_button_flags() | 1ul << type) : (get_button_flags() & ~(1uL << type));
-//	if(check==get_button_flags()) return;	//Button already set, we do not need to emit the data again
-
-    return (buttonFlags & (1ul << type) ? true : false);
+    return (buttonFlags & (1ul << type)) != 0;
 }
 
 int Joystick::get_axis_status(int _i) {

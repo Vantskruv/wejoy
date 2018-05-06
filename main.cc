@@ -218,6 +218,9 @@ int main(int argc, char **argv) {
     if (!lScript.isOpen()) return 0;
 
     if (!populate_devices(lScript)) exit(0);
+
+    GLOBAL::vKeyboard.init();
+
     if (!populate_virtual_devices(lScript)) exit(0);
     link_lua_functions(lScript);
 
