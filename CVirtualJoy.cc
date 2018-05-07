@@ -53,7 +53,7 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes) {
         user_dev.absmin[i] = -32767;
     }
 
-    user_dev.id.bustype = BUS_VIRTUAL;    //TODO Should we use BUS_VIRTUAL instead of BUS_USB?
+    user_dev.id.bustype = BUS_VIRTUAL;
     //user_dev.id.vendor = 0x06a3;
     //user_dev.id.product = 0x0764;
     user_dev.id.version = 1;

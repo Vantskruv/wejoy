@@ -11,10 +11,9 @@ void updateThread(LuaScript &lScript) {
     //Sleep one second to give the X11 system time to adapt.
     sleep(1);
 
-    int rc = 1;
+    int rc;
     while (bPoll) {
         for (Joystick *joy : GLOBAL::joyList) {
-            //TODO: look into using libevdev_event_code_get_name to generate function names, to make it so that we can use names for some axis, instead of just relying on ids.
             struct input_event ev;
             rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
@@ -30,7 +29,7 @@ void updateThread(LuaScript &lScript) {
                     }
 
                 } else if (ev.type == EV_ABS) {
-                    lScript.call_value_function("axis_event",joy->getLuaName(), joy->get_button_index(ev.code), ev.value);
+                    lScript.call_value_function("axis_event",joy->getLuaName(), joy->get_axis_index(ev.code), ev.value);
                     lScript.call_value_function("axis_event_code",joy->getLuaName(), ev.code, ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(ev.code) + "_event",
                                                  ev.value);
