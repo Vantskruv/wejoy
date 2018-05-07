@@ -112,61 +112,11 @@ const uint64_t Joystick::get_axes_notify_flags() {
 }
 
 int Joystick::get_button_status(int type) {
-    return libevdev_get_event_value(dev, 1, static_cast<unsigned int>(type));
+    return libevdev_get_event_value(dev, EV_KEY, static_cast<unsigned int>(type));
 }
-
-//TODO: https://www.freedesktop.org/software/libevdev/doc/latest/group__bits.html#ga6259f4c6bdba950329ff9cd48c2ef8a3
-//TODO: Look at libevdev_fetch_event_value(), and wrap everything below around that instead of keeping an internal state.
 
 int Joystick::get_axis_status(int _i) {
     return libevdev_get_event_value(dev, EV_ABS, static_cast<unsigned int>(_i));
-}
-
-
-void Joystick::_get_joystick_mapping(std::vector<int> &_buttons, std::vector<int> &_axes) {
-    uint8_t num_button = 0;
-    ioctl(_fd, JSIOCGBUTTONS, &num_button);
-    uint8_t button_count = num_button;
-
-    uint16_t btnmap[KEY_MAX - BTN_MISC + 1];
-    if (ioctl(_fd, JSIOCGBTNMAP, btnmap) < 0) {
-        std::ostringstream str;
-        str << _devicePath << ": " << std::strerror(errno);
-        throw std::runtime_error(str.str());
-    } else {
-        std::copy(btnmap, btnmap + button_count, std::back_inserter(_buttons));
-    }
-
-
-    uint8_t num_axis = 0;
-    ioctl(_fd, JSIOCGAXES, &num_axis);
-    uint8_t axis_count = num_axis;
-
-    uint8_t axismap[ABS_MAX + 1];
-    if (ioctl(_fd, JSIOCGAXMAP, axismap) < 0) {
-        std::ostringstream str;
-        str << _devicePath << ": " << strerror(errno);
-        throw std::runtime_error(str.str());
-    } else {
-        std::copy(axismap, axismap + axis_count, std::back_inserter(_axes));
-    }
-}
-
-
-int Joystick::get_button_index(int _type) {
-    std::vector<int>::iterator it;
-    it = std::find(buttonMappings.begin(), buttonMappings.end(), _type);
-    if (it == buttonMappings.end()) return -1;
-
-    return it - buttonMappings.begin();
-}
-
-int Joystick::get_axis_index(int _type) {
-    std::vector<int>::iterator it;
-    it = std::find(axisMappings.begin(), axisMappings.end(), _type);
-    if (it == axisMappings.end()) return -1;
-
-    return it - axisMappings.begin();
 }
 
 

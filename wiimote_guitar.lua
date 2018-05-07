@@ -22,6 +22,19 @@ v_devices =
     }
 }
 
+function axis_event(device, axis, value)
+    print("Axis change: ")
+    print(axis)
+    print(value)
+end
+
+function button_event(device, button, value)
+    print("Button change: ")
+    print(button)
+    print(value)
+end
+
+
 function guitar_b548_event(value)
     send_button_event(0, 0, value)
 end

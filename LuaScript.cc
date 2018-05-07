@@ -8,7 +8,6 @@ LuaScript::LuaScript(const std::string &filename) {
     if (luaL_loadfile(L, filename.c_str()) || lua_pcall(L, 0, 0, 0)) {
         std::cout << "Error: failed to load (" << filename << ")" << std::endl;
         const char *s = strerror(errno);
-        //std::cout << s << std::endl;
         std::cout << lua_tostring(L, -1) << std::endl << s << std::endl;
         L = 0;
         return;
@@ -109,6 +108,23 @@ void LuaScript::call_device_function(const std::string &str_func, int value) {
     lua_pushnumber(L, value);
     lua_pcall(L, 1, 0, 0);        //Lua handle, number of arguments, number of return values, error code
 }
+
+void LuaScript::call_axis_function(std::string name, int axis, int value) {
+    lua_getglobal(L, "axis_event");
+    lua_pushstring(L, name.c_str());
+    lua_pushnumber(L, axis);
+    lua_pushnumber(L, value);
+    lua_pcall(L, 3, 0, 0);        //Lua handle, number of arguments, number of return values, error code
+}
+
+void LuaScript::call_button_function(std::string name, int button, int value) {
+    lua_getglobal(L, "button_event");
+    lua_pushstring(L, name.c_str());
+    lua_pushnumber(L, button);
+    lua_pushnumber(L, value);
+    lua_pcall(L, 3, 0, 0);        //Lua handle, number of arguments, number of return values, error code
+}
+
 
 void LuaScript::pushcfunction(int (*_func)(lua_State *), const std::string &_name) {
     lua_pushcfunction(L, _func);

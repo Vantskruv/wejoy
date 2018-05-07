@@ -10,6 +10,7 @@ extern "C" {
 # include <lua5.2/lauxlib.h>
 # include <lua5.2/lualib.h>
 }
+#include "input_events.h"
 
 
 class LuaScript {
@@ -27,6 +28,10 @@ public:
     std::vector<std::string> getTableKeys(const std::string &name);
 
     std::vector<std::string> getAllGlobals();
+
+    void call_axis_function(std::string name, int axis, int value);
+
+    void call_button_function(std::string name, int button, int value);
 
     //void call_device_function(const device_function&, int);
     void call_device_function(const std::string &, int);
