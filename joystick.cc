@@ -82,11 +82,13 @@ void Joystick::initMaps() {
     std::map<int, const char*>::iterator it;
     for (int i =0; i < ABS_MAX; i++) {
         if (libevdev_has_event_code(dev, EV_ABS, i)) {
+            axisMappingsRev[i] = static_cast<int>(axisMappings.size());
             axisMappings.push_back(i);
         }
     }
     for (int i =0; i < KEY_MAX; i++) {
         if (libevdev_has_event_code(dev, EV_KEY, i)) {
+            buttonMappingsRev[i] = static_cast<int>(buttonMappings.size());
             buttonMappings.push_back(i);
         }
     }
@@ -109,24 +111,33 @@ int Joystick::get_axis_status(int _type) {
     return libevdev_get_event_value(dev, EV_ABS, static_cast<unsigned int>(_type));
 }
 
+int Joystick::get_axis_min(int _type) {
+    return libevdev_get_abs_minimum(dev, static_cast<unsigned int>(_type));
+}
+
+int Joystick::get_axis_max(int _type) {
+    return libevdev_get_abs_maximum(dev, static_cast<unsigned int>(_type));
+}
+
 int Joystick::get_button_index(int _type)
 {
-    std::vector<int>::iterator it;
-    it = std::find(buttonMappings.begin(), buttonMappings.end(), _type);
-    if(it == buttonMappings.end()) return -1;
-
-    return it - buttonMappings.begin();
+    return buttonMappingsRev[_type];
 }
 
 int Joystick::get_axis_index(int _type)
 {
-    std::vector<int>::iterator it;
-    it = std::find(axisMappings.begin(), axisMappings.end(), _type);
-    if(it == axisMappings.end()) return -1;
-
-    return it - axisMappings.begin();
+    return axisMappingsRev[_type];
 }
 
+int Joystick::get_button_type(int _index)
+{
+    return buttonMappings[_index];
+}
+
+int Joystick::get_axis_type(int _index)
+{
+    return axisMappings[_index];
+}
 
 bool Joystick::isFound() {
     return _fd >= 0;
@@ -134,5 +145,12 @@ bool Joystick::isFound() {
 
 Joystick::~Joystick() {
     if (_fd >= 0) close(_fd);
+}
+
+unsigned int Joystick::get_num_buttons() {
+    return buttonMappings.size();
 };
 
+unsigned int Joystick::get_num_axes() {
+    return axisMappings.size();
+};

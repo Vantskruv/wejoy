@@ -4,6 +4,7 @@
 #include "LuaScript.h"
 #include "global.h"
 #include <libevdev-1.0/libevdev/libevdev.h>
+#include <algorithm>
 
 bool bPoll = true;
 
@@ -128,6 +129,94 @@ int l_send_vjoy_button_event(lua_State *_L) {
 }
 
 //Called from user via lua script
+int l_get_joy_axis_min(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    int type = lua_tonumber(L, 2);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_axis_min(joystick->get_axis_type(type));
+    lua_pushnumber(L, status);
+    return 1;
+}
+
+
+//Called from user via lua script
+int l_get_joy_axis_min_code(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    int type = lua_tonumber(L, 2);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_axis_min(type);
+    lua_pushnumber(L, status);
+    return 1;
+}
+
+//Called from user via lua script
+int l_get_joy_axis_max(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    int type = lua_tonumber(L, 2);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_axis_max(joystick->get_axis_type(type));
+    lua_pushnumber(L, status);
+    return 1;
+}
+
+//Called from user via lua script
+int l_get_joy_axis_max_code(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    int type = lua_tonumber(L, 2);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_axis_max(type);
+    lua_pushnumber(L, status);
+    return 1;
+}
+
+
+//Called from user via lua script
+int l_get_joy_axis_count(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_num_axes();
+    lua_pushnumber(L, status);
+    return 1;
+}
+
+int l_get_joy_button_count(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_num_buttons();
+    lua_pushnumber(L, status);
+    return 1;
+}
+//Called from user via lua script
 int l_send_vjoy_axis_event(lua_State *_L) {
     unsigned int id = lua_tonumber(_L, 1);
     int type = lua_tonumber(_L, 2);
@@ -176,8 +265,9 @@ int l_get_vjoy_axis_status(lua_State *L) {
 bool populate_devices(LuaScript &lScript) {
     std::vector<LuaStick> dList;
     LuaStick val;
-
-    for (std::string s : lScript.getTableKeys("devices")) {
+    std::vector<std::string> devices = lScript.getTableKeys("devices");
+    std::sort(devices.begin(), devices.end());
+    for (const std::string &s : devices) {
         val = LuaStick();
         val.lua_name = s;
         bool noerr;
@@ -239,6 +329,12 @@ void link_lua_functions(LuaScript &lScript) {
     lScript.pushcfunction(l_send_keyboard_event, "send_keyboard_event");
     lScript.pushcfunction(l_get_joy_button_status, "get_button_status");
     lScript.pushcfunction(l_get_joy_axis_status, "get_axis_status");
+    lScript.pushcfunction(l_get_joy_axis_min, "get_axis_min");
+    lScript.pushcfunction(l_get_joy_axis_min_code, "get_axis_min_code");
+    lScript.pushcfunction(l_get_joy_axis_max, "get_axis_max");
+    lScript.pushcfunction(l_get_joy_axis_max_code, "get_axis_max_code");
+    lScript.pushcfunction(l_get_joy_axis_count, "get_axis_count");
+    lScript.pushcfunction(l_get_joy_button_count, "get_button_count");
     lScript.pushcfunction(l_get_joy_button_status_code, "get_button_status_code");
     lScript.pushcfunction(l_get_joy_axis_status_code, "get_axis_status_code");
     lScript.pushcfunction(l_get_vjoy_button_status, "get_vjoy_button_status");
@@ -263,7 +359,7 @@ int main(int argc, char **argv) {
 
     if (!populate_virtual_devices(lScript)) exit(0);
     link_lua_functions(lScript);
-
+    lScript.call_main_function();
     std::cout << "Press 'q' and then 'ENTER' to quit!\n";
     std::thread threadUpdate(updateThread, std::ref(lScript));
 

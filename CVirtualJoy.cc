@@ -49,8 +49,8 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes) {
     strcpy(user_dev.name, dName.c_str());
 
     for (unsigned int i = 0; i < _axes && i < AXES_SIZE; i++) {
-        user_dev.absmax[i] = 32767;
-        user_dev.absmin[i] = -32767;
+        user_dev.absmax[i] = MAX_ABS_VAL;
+        user_dev.absmin[i] = MIN_ABS_VAL;
     }
 
     user_dev.id.bustype = BUS_VIRTUAL;

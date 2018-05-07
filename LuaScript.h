@@ -113,11 +113,14 @@ public:
         return 0;
     }
 
+    void call_main_function();
+
 private:
     lua_State *L;
     int level;
 
     void _set_global_keys();
+
 };
 
 // Specializations

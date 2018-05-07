@@ -3,6 +3,7 @@
 #include <errno.h>
 #include "input_events.h"
 #include <cstring>
+#include "buttons_ref.h"
 
 LuaScript::LuaScript(const std::string &filename) {
     L = luaL_newstate();
@@ -87,6 +88,7 @@ std::vector<std::string> LuaScript::getTableKeys(const std::string &name) {
     lua_pushstring(L, name.c_str());
     lua_pcall(L, 1, 1, 0); // execute function
     std::string test = lua_tostring(L, -1);
+    std::cout << test << std::endl;
     std::vector<std::string> strings;
     std::string temp;
     for (unsigned int i = 0; i < test.size(); i++) {
@@ -118,6 +120,11 @@ void LuaScript::call_value_function(std::string function, std::string name, int 
     lua_pcall(L, 3, 0, 0);        //Lua handle, number of arguments, number of return values, error code
 }
 
+void LuaScript::call_main_function() {
+    lua_getglobal(L, "main");
+    lua_pcall(L, 0, 0, 0);        //Lua handle, number of arguments, number of return values, error code
+}
+
 void LuaScript::pushcfunction(int (*_func)(lua_State *), const std::string &_name) {
     lua_pushcfunction(L, _func);
     lua_setglobal(L, _name.c_str());
@@ -131,5 +138,9 @@ void LuaScript::_set_global_keys() {
         lua_pushnumber(L, it->first);
         lua_setglobal(L, it->second);
     }
+    lua_pushnumber(L, MAX_ABS_VAL);
+    lua_setglobal(L, "MAX_ABS_VAL");
+    lua_pushnumber(L, MIN_ABS_VAL);
+    lua_setglobal(L, "MIN_ABS_VAL");
 }
 

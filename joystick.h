@@ -44,6 +44,8 @@ private:
     std::string lua_name;
     std::vector<int> axisMappings;
     std::vector<int> buttonMappings;
+    std::map<int,int> axisMappingsRev;
+    std::map<int,int> buttonMappingsRev;
 
     void initMaps();
 
@@ -81,6 +83,14 @@ public:
     int get_button_status(int);
 
     int get_axis_status(int);
+
+    int get_axis_min(int _type);
+
+    int get_axis_max(int _type);
+
+    int get_button_type(int _index);
+
+    int get_axis_type(int _index);
 };
 
 #endif
