@@ -22,7 +22,14 @@
 #define JS_EVENT_AXIS   0x02 // joystick moved
 #define JS_EVENT_INIT   0x80 // initial state of device
 
-
+class LuaStick {
+public:
+    std::string name;
+    std::string lua_name;
+    int index;
+    int vendor_id=-1;
+    int product_id=-1;
+};
 /**
  * Represents a joystick device. Allows data to be sampled from it.
  */
@@ -33,6 +40,7 @@ private:
     struct libevdev *dev = NULL;
     int _fd = -1;
     std::string name;
+    std::string lua_name;
     int productid;
     std::string _devicePath;
     uint64_t buttonFlags = 0;                //Curent values of all buttons
@@ -53,7 +61,13 @@ public:
     */
     Joystick(int joystickNumber);
 
-    Joystick(std::string, int);
+    Joystick(LuaStick);
+
+    /**
+     * List connected devices
+     * @return a list of connected libevdev devices
+     */
+    std::vector<struct libevdev *> listDevices();
 
     /**
     * Initialises an instance for the joystick device specified.
@@ -72,6 +86,8 @@ public:
     void setPath(std::string);
 
     std::string getName() { return name; };
+
+    std::string getLuaName() { return lua_name; };
 
     struct libevdev *get_dev() { return dev; }
 

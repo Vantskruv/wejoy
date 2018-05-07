@@ -41,7 +41,8 @@ typedef uint16_t __u16;
 #define JSIOCGBTNMAP            _IOR('j', 0x34, __u16[KEY_MAX - BTN_MISC + 1])  /* get button mapping */
 #define JSIOCGAXMAP             _IOR('j', 0x32, __u8[ABS_CNT])                    /* get axis mapping */
 
-Joystick::Joystick(std::string _name, int index) {
+Joystick::Joystick(LuaStick stick) {
+    int current = 0;
     std::string dir("/dev/input/");
 
     //Open '/dev/input' directory
@@ -51,13 +52,12 @@ Joystick::Joystick(std::string _name, int index) {
         std::cout << "Error(" << errno << ") opening " << dir << '\n';
         return;
     }
-    int current = 0;
     //Read '/dev/input' directory
     while ((dirp = readdir(dp)) != NULL) {
         std::string cFile(dirp->d_name);
         //If a file that begins with 'event' is found
         if (cFile.compare(0, 5, "event") == 0) {
-            openPath("/dev/input/"+cFile);
+            openPath("/dev/input/" + cFile);
             int rc = 1;
             struct libevdev *_dev = NULL;
             rc = libevdev_new_from_fd(_fd, &_dev);
@@ -67,13 +67,13 @@ Joystick::Joystick(std::string _name, int index) {
                 closeJoy();
                 continue;
             }
-            //TODO: bring back a version of this that still uses vendor and product ids, to make sure we are backwards compatible.
-            //TODO: libevdev_get_id_vendor
-            //TODO: libevdev_get_id_product
             name = libevdev_get_name(_dev);
-            if (name == _name) {
-                if (current == index) {
+            int vid = libevdev_get_id_vendor(_dev);
+            int pid = libevdev_get_id_product(_dev);
+            if ((vid == stick.vendor_id && pid == stick.product_id) || name == stick.name) {
+                if (current == stick.index) {
                     dev = _dev;
+                    lua_name = stick.lua_name;
                     break;
                 }
                 current++;

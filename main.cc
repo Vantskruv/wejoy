@@ -5,12 +5,6 @@
 #include "global.h"
 #include <libevdev-1.0/libevdev/libevdev.h>
 
-class LuaStick {
-public:
-    std::string name;
-    int index;
-};
-
 bool bPoll = true;
 
 void updateThread(LuaScript &lScript) {
@@ -18,27 +12,28 @@ void updateThread(LuaScript &lScript) {
     sleep(1);
 
     int rc = 1;
-    while (bPoll)
-        for (unsigned int i = 0; i < GLOBAL::joyList.size(); i++) {
+    while (bPoll) {
+        for (Joystick *joy : GLOBAL::joyList) {
             //TODO: look into using libevdev_event_code_get_name to generate function names, to make it so that we can use names for some axis, instead of just relying on ids.
             struct input_event ev;
-            rc = libevdev_next_event(GLOBAL::joyList[i]->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
+            rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
                 if (ev.type == 1) {
-                    lScript.call_device_function("d" + std::to_string(i) + "_b" + std::to_string(ev.code) + "_event",
+                    lScript.call_device_function(joy->getLuaName() + "_b" + std::to_string(ev.code) + "_event",
                                                  ev.value);
                 } else if (ev.type == 3) {
-                    lScript.call_device_function("d" + std::to_string(i) + "_a" + std::to_string(ev.code) + "_event",
+                    lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(ev.code) + "_event",
                                                  ev.value);
                 }
             }
-
-            // printf("Event: %s %s %i %i %d\n",
-            // 		libevdev_event_type_get_name(ev.type),
-            // 		libevdev_event_code_get_name(ev.type, ev.code),
-            // 		ev.type, ev.code,
-            // 		ev.value);
         }//for
+//        printf("Event: (%s) %s %s %i %i %d\n",
+//               joy->getLuaName().c_str(),
+//               libevdev_event_type_get_name(ev.type),
+//               libevdev_event_code_get_name(ev.type, ev.code),
+//               ev.type, ev.code,
+//               ev.value);
+    }
 
 }
 
@@ -142,20 +137,26 @@ int l_get_vjoy_axis_status(lua_State *L) {
 bool populate_devices(LuaScript &lScript) {
     std::vector<LuaStick> dList;
     LuaStick val;
-    //TODO: refactor so this accepts arbituary names, and saves the name to the joystick
+
     for (std::string s : lScript.getTableKeys("devices")) {
         val = LuaStick();
+        val.lua_name = s;
         bool noerr;
         val.name = lScript.get<std::string>("devices." + s + ".name", noerr);
-        if (!noerr) break;
+        if (!noerr) {
+            val.product_id = lScript.get<int>("devices." + s + ".productid", noerr);;
+            if (!noerr) break;
+            val.vendor_id = lScript.get<int>("devices." + s + ".vendorid", noerr);
+            if (!noerr) break;
+        }
         val.index = lScript.get<int>("devices." + s + ".index", noerr);
-        if (!noerr) break;
+        if (!noerr) val.index = 0;
 
         dList.push_back(val);
     }
     //Populate the list of found joysticks
     for (unsigned int i = 0; i < dList.size(); i++) {
-        Joystick *cJoy = new Joystick(dList[i].name, dList[i].index);
+        Joystick *cJoy = new Joystick(dList[i]);
         if (!cJoy->isFound()) {
             std::cout << "WARNING: Joystick " << dList[i].name << "[" << dList[i].index << "] is not found.\n";
             delete cJoy;
@@ -173,7 +174,6 @@ bool populate_virtual_devices(LuaScript &lScript) {
     std::vector<std::array<int, 2>> dList;
     std::array<int, 2> val;
     for (std::string s : lScript.getTableKeys("v_devices")) {
-        val = LuaStick();
         bool noerr;
         val[0] = lScript.get<int>("v_devices." + s + ".buttons", noerr);
         if (!noerr) break;
