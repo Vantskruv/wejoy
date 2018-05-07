@@ -27,7 +27,7 @@ public:
 
     bool isOpen();
 
-    CVirtualJoy(unsigned int, unsigned int);    //buttons, axes
+    CVirtualJoy(unsigned int, unsigned int);    //buttons, axesMapping
     ~CVirtualJoy();
 };
 

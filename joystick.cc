@@ -32,14 +32,7 @@
 
 #include <sys/ioctl.h>
 
-#define KEY_MAX                0x2ff
-#define BTN_MISC                0x100
-typedef unsigned char __u8;
-typedef uint16_t __u16;
-#define JSIOCGAXES              _IOR('j', 0x11, __u8)                           /* get number of axes */
-#define JSIOCGBUTTONS           _IOR('j', 0x12, __u8)                            /* get number of buttons */
-#define JSIOCGBTNMAP            _IOR('j', 0x34, __u16[KEY_MAX - BTN_MISC + 1])  /* get button mapping */
-#define JSIOCGAXMAP             _IOR('j', 0x32, __u8[ABS_CNT])                    /* get axis mapping */
+#include "input_events.h"
 
 Joystick::Joystick(LuaStick stick) {
     int current = 0;
@@ -74,6 +67,7 @@ Joystick::Joystick(LuaStick stick) {
                 if (current == stick.index) {
                     dev = _dev;
                     lua_name = stick.lua_name;
+                    initMaps();
                     break;
                 }
                 current++;
@@ -84,17 +78,22 @@ Joystick::Joystick(LuaStick stick) {
     closedir(dp);
 }
 
+void Joystick::initMaps() {
+    std::map<int, const char*>::iterator it;
+    for (int i =0; i < ABS_MAX; i++) {
+        if (libevdev_has_event_code(dev, EV_ABS, i)) {
+            axisMappings.push_back(i);
+        }
+    }
+    for (int i =0; i < KEY_MAX; i++) {
+        if (libevdev_has_event_code(dev, EV_KEY, i)) {
+            buttonMappings.push_back(i);
+        }
+    }
+}
+
 void Joystick::openPath(std::string devicePath) {
     _fd = open(devicePath.c_str(), O_RDONLY | O_NONBLOCK);
-    _devicePath = devicePath;
-}
-
-void Joystick::setPath(std::string devicePath) {
-    _devicePath = devicePath;
-}
-
-void Joystick::openJoy() {
-    _fd = open(_devicePath.c_str(), O_RDONLY | O_NONBLOCK);
 }
 
 void Joystick::closeJoy() {
@@ -102,30 +101,30 @@ void Joystick::closeJoy() {
     _fd = -1;
 }
 
-const uint64_t Joystick::get_button_flags() {
-    return buttonFlags;
+int Joystick::get_button_status(int _type) {
+    return libevdev_get_event_value(dev, EV_KEY, static_cast<unsigned int>(_type));
 }
 
-
-const uint64_t Joystick::get_axes_notify_flags() {
-    return axesNotifyFlags;
+int Joystick::get_axis_status(int _type) {
+    return libevdev_get_event_value(dev, EV_ABS, static_cast<unsigned int>(_type));
 }
 
-int Joystick::get_button_status(int type) {
-    return libevdev_get_event_value(dev, EV_KEY, static_cast<unsigned int>(type));
+int Joystick::get_button_index(int _type)
+{
+    std::vector<int>::iterator it;
+    it = std::find(buttonMappings.begin(), buttonMappings.end(), _type);
+    if(it == buttonMappings.end()) return -1;
+
+    return it - buttonMappings.begin();
 }
 
-int Joystick::get_axis_status(int _i) {
-    return libevdev_get_event_value(dev, EV_ABS, static_cast<unsigned int>(_i));
-}
+int Joystick::get_axis_index(int _type)
+{
+    std::vector<int>::iterator it;
+    it = std::find(axisMappings.begin(), axisMappings.end(), _type);
+    if(it == axisMappings.end()) return -1;
 
-
-unsigned int Joystick::get_num_buttons() {
-    return buttonMappings.size();
-}
-
-unsigned int Joystick::get_num_axes() {
-    return axisMappings.size();
+    return it - axisMappings.begin();
 }
 
 

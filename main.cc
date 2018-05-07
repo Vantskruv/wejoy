@@ -19,14 +19,26 @@ void updateThread(LuaScript &lScript) {
             rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
                 if (ev.type == EV_KEY) {
-                    lScript.call_button_function(joy->getLuaName(), ev.code, ev.value);
+                    lScript.call_value_function("button_event",joy->getLuaName(), joy->get_button_index(ev.code), ev.value);
+                    lScript.call_value_function("button_event_code",joy->getLuaName(), ev.code, ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_b" + std::to_string(ev.code) + "_event",
                                                  ev.value);
+                    const char* name = libevdev_event_code_get_name(EV_KEY,ev.code);
+                    if (name != NULL) {
+                        lScript.call_device_function(joy->getLuaName() + "_b" + name + "_code_event",
+                                                     ev.value);
+                    }
 
                 } else if (ev.type == EV_ABS) {
-                    lScript.call_axis_function(joy->getLuaName(), ev.code, ev.value);
+                    lScript.call_value_function("axis_event",joy->getLuaName(), joy->get_button_index(ev.code), ev.value);
+                    lScript.call_value_function("axis_event_code",joy->getLuaName(), ev.code, ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(ev.code) + "_event",
                                                  ev.value);
+                    const char* name = libevdev_event_code_get_name(EV_ABS,ev.code);
+                    if (name != NULL) {
+                        lScript.call_device_function(joy->getLuaName() + "_a" + name + "_code_event",
+                                                     ev.value);
+                    }
                 }
             }
         }//for
@@ -51,7 +63,8 @@ int l_get_joy_button_status(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    int status = GLOBAL::joyList[id]->get_button_status(type);
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_button_status(joystick->get_button_index(type));
     lua_pushnumber(L, status);
     return 1;
 }
@@ -59,6 +72,36 @@ int l_get_joy_button_status(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_axis_status(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    int type = lua_tonumber(L, 2);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    Joystick* joystick = GLOBAL::joyList[id];
+    int status = joystick->get_axis_status(joystick->get_axis_index(type));
+    lua_pushnumber(L, status);
+    return 1;
+}
+
+//Called from user via lua script
+int l_get_joy_button_status_code(lua_State *L) {
+    unsigned int id = lua_tonumber(L, 1);
+    int type = lua_tonumber(L, 2);
+    if (id >= GLOBAL::joyList.size()) {
+        std::cout << "ERROR get_joy_button_status: Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+    int status = GLOBAL::joyList[id]->get_button_status(type);
+    lua_pushnumber(L, status);
+    return 1;
+}
+
+
+//Called from user via lua script
+int l_get_joy_axis_status_code(lua_State *L) {
     unsigned int id = lua_tonumber(L, 1);
     int type = lua_tonumber(L, 2);
     if (id >= GLOBAL::joyList.size()) {
@@ -197,6 +240,8 @@ void link_lua_functions(LuaScript &lScript) {
     lScript.pushcfunction(l_send_keyboard_event, "send_keyboard_event");
     lScript.pushcfunction(l_get_joy_button_status, "get_button_status");
     lScript.pushcfunction(l_get_joy_axis_status, "get_axis_status");
+    lScript.pushcfunction(l_get_joy_button_status_code, "get_button_status_code");
+    lScript.pushcfunction(l_get_joy_axis_status_code, "get_axis_status_code");
     lScript.pushcfunction(l_get_vjoy_button_status, "get_vjoy_button_status");
     lScript.pushcfunction(l_get_vjoy_axis_status, "get_vjoy_axis_status");
 }

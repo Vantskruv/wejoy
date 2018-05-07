@@ -23,9 +23,9 @@ v_devices =
 }
 
 function axis_event(device, axis, value)
-    print("Axis change: ")
-    print(axis)
-    print(value)
+--    print("Axis change: ")
+--    print(axis)
+--    print(value)
 end
 
 function button_event(device, button, value)

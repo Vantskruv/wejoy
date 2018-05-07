@@ -29,11 +29,11 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes) {
         }//if
     }//if
 
-    //Setup axes for device
+    //Setup axesMapping for device
 
     if (_axes >= AXES_SIZE)
-        std::cout << "WARNING: Number of axes (" << _axes << ") for virtual device " << deviceid
-                  << " exceeds maximum allowable axes which is " << (AXES_SIZE - 1) << ".\n";
+        std::cout << "WARNING: Number of axesMapping (" << _axes << ") for virtual device " << deviceid
+                  << " exceeds maximum allowable axesMapping which is " << (AXES_SIZE - 1) << ".\n";
     for (unsigned int i = 0; i < _axes && i < AXES_SIZE; i++) {
         if (suinput_enable_event(fd, EV_ABS, buttons_ref::AXES[i]) < 0) {
             std::cout << "ERROR: Failed enabling event for axis " << i << " on virtual device << " << deviceid << ".\n";

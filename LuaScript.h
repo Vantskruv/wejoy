@@ -29,9 +29,7 @@ public:
 
     std::vector<std::string> getAllGlobals();
 
-    void call_axis_function(std::string name, int axis, int value);
-
-    void call_button_function(std::string name, int button, int value);
+    void call_value_function(std::string function, std::string name, int axis, int value);
 
     //void call_device_function(const device_function&, int);
     void call_device_function(const std::string &, int);

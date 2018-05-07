@@ -7,8 +7,8 @@
 
 
 # Features ----
-* Create one or more virtual joysticks with a custom number of buttons and axes.
-* Read physical joystick buttons and and axes events.
+* Create one or more virtual joysticks with a custom number of buttons and axesMapping.
+* Read physical joystick buttons and and axesMapping events.
 * Send keyboard events
 * Lua scripting for conditional purposes
 
