@@ -88,8 +88,7 @@ std::vector<std::string> LuaScript::getTableKeys(const std::string &name) {
     lua_pcall(L, 1, 1, 0); // execute function
     std::string test = lua_tostring(L, -1);
     std::vector<std::string> strings;
-    std::string temp = "";
-    std::cout << "TEMP:" << test << std::endl;
+    std::string temp;
     for (unsigned int i = 0; i < test.size(); i++) {
         if (test.at(i) != ',') {
             temp += test.at(i);

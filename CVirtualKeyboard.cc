@@ -60,6 +60,6 @@ void CVirtualKeyboard::send_key_event(int type, int value) {
     //if(check==get_button_flags()) return;	//Button already set, we do not need to emit the data again
     //set_button_flags(check);				//Updating button flags
 
-    suinput_emit(fd, EV_KEY, type, value);
+    suinput_emit(fd, EV_KEY, static_cast<uint16_t>(type), value);
     suinput_syn(fd);
 }

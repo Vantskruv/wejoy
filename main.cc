@@ -18,21 +18,23 @@ void updateThread(LuaScript &lScript) {
             struct input_event ev;
             rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
-                if (ev.type == 1) {
+                if (ev.type == EV_KEY) {
                     lScript.call_device_function(joy->getLuaName() + "_b" + std::to_string(ev.code) + "_event",
                                                  ev.value);
-                } else if (ev.type == 3) {
+
+                } else if (ev.type == EV_ABS) {
                     lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(ev.code) + "_event",
                                                  ev.value);
                 }
             }
+
+//            printf("Event: (%s) %s %s %i %i %d\n",
+//                   joy->getLuaName().c_str(),
+//                   libevdev_event_type_get_name(ev.type),
+//                   libevdev_event_code_get_name(ev.type, ev.code),
+//                   ev.type, ev.code,
+//                   ev.value);
         }//for
-//        printf("Event: (%s) %s %s %i %i %d\n",
-//               joy->getLuaName().c_str(),
-//               libevdev_event_type_get_name(ev.type),
-//               libevdev_event_code_get_name(ev.type, ev.code),
-//               ev.type, ev.code,
-//               ev.value);
     }
 
 }

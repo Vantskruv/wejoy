@@ -62,7 +62,7 @@ Joystick::Joystick(LuaStick stick) {
             struct libevdev *_dev = NULL;
             rc = libevdev_new_from_fd(_fd, &_dev);
             if (rc < 0) {
-                fprintf(stderr, "Failed to init device /dev/input/%s (%s)\n", dirp->d_name, strerror(-rc));
+                fprintf(stderr, "Skipping device /dev/input/%s, as it reported an error: (%s)\n", dirp->d_name, strerror(-rc));
                 //skip invalid devices
                 closeJoy();
                 continue;
@@ -112,14 +112,14 @@ const uint64_t Joystick::get_axes_notify_flags() {
 }
 
 int Joystick::get_button_status(int type) {
-    return (buttonFlags & (1ul << type)) != 0;
+    return libevdev_get_event_value(dev, 1, static_cast<unsigned int>(type));
 }
 
 //TODO: https://www.freedesktop.org/software/libevdev/doc/latest/group__bits.html#ga6259f4c6bdba950329ff9cd48c2ef8a3
 //TODO: Look at libevdev_fetch_event_value(), and wrap everything below around that instead of keeping an internal state.
 
 int Joystick::get_axis_status(int _i) {
-    return axesData[_i];
+    return libevdev_get_event_value(dev, EV_ABS, static_cast<unsigned int>(_i));
 }
 
 
