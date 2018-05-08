@@ -60,6 +60,7 @@ struct libevdev *controller;
 struct input_event ev_k;
 struct input_event ev_c;
 void next_event(){
+    //Ask for the next event, so we can can check it.
     libevdev_next_event(keyboard, LIBEVDEV_READ_FLAG_NORMAL, &ev_k);
     libevdev_next_event(controller, LIBEVDEV_READ_FLAG_NORMAL, &ev_c);
 }
@@ -68,11 +69,45 @@ SCENARIO( "Joystick Buttons work", "[vector]" ) {
         WHEN("The first button on the throttle is pressed") {
             vthrottle->send_button_event(0,1);
             usleep(100);
-            next_event();
             THEN("expect the a key to be pressed") {
+                next_event();
                 REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_A) == 1);
             }
         }
+        WHEN("The first button on the throttle is released") {
+            vthrottle->send_button_event(0,0);
+            usleep(100);
+            THEN("expect the a key to be released") {
+                next_event();
+                next_event();
+                REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_A) == 0);
+            }
+        }
+        WHEN("The second button on the throttle is pressed") {
+            vthrottle->send_button_event(1,1);
+            usleep(100);
+            THEN("expect the a key to be pressed and the shift key") {
+                next_event();
+                next_event();
+                REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_LEFTSHIFT) == 1);
+                next_event();
+                next_event();
+                REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_A) == 1);
+            }
+        }
+        WHEN("The second button on the throttle is released") {
+            vthrottle->send_button_event(1,0);
+            usleep(100);
+            THEN("expect the a key to be pressed and the shift key") {
+                next_event();
+                next_event();
+                REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_LEFTSHIFT) == 0);
+                next_event();
+                next_event();
+                REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_A) == 0);
+            }
+        }
+
     }
 
 }
