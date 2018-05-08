@@ -6,7 +6,7 @@
 #define WEJOY_CONTROLLER_H
 
 
-#include "../suinput.h"
+#include "suinput.h"
 #include <vector>
 #include <string>
 

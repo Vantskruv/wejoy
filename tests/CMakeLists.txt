@@ -8,6 +8,6 @@ add_library(Catch INTERFACE)
 target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 
 # Make test executable
-set(TEST_SOURCES test_main.cpp controller.cpp suinput.c)
+set(TEST_SOURCES test_main.cpp controller.cpp)
 add_executable(tests ${TEST_SOURCES})
 target_link_libraries(tests Catch udev pthread X11 lua5.2 evdev libwejoy)
