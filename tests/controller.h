@@ -18,6 +18,9 @@ private:
     int fd;                                    //Device handler id
     uint64_t buttonFlags = 0;                //Curent values of all buttons
     std::vector<int> axesData;                //Current values of all axis
+    char name[16];
+    std::string eventname;
+    std::string jsname;
 
 public:
     void set_button_flags(uint64_t _b) { buttonFlags = _b; };        //Set buttons to on or off

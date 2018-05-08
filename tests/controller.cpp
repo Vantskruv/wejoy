@@ -64,10 +64,39 @@ Controller::Controller(unsigned int _buttons, unsigned int _axes, __u16 vid, __u
         suinput_destroy(fd);
         fd = -1;
         return;
+    }//if
+
+    r = ioctl(fd, UI_GET_SYSNAME(sizeof(this->name)),this->name);
+    if (r < 0) {
+        std::cout << "ERROR " << r << ": Failed reading virtual device name " << deviceid << ".\n";
+        suinput_destroy(fd);
+        fd = -1;
+        return;
+    }//if
+    //Read '/dev/input' directory
+    std::string path = std::string()+"/sys/devices/virtual/input/"+this->name;
+    DIR *dp;
+    struct dirent *dirp;
+    if ((dp = opendir(path.c_str())) == NULL) {
+        std::cout << "Error(" << errno << ") opening " << path << '\n';
+        return;
     }
+    while ((dirp = readdir(dp)) != NULL) {
+        std::string cFile(dirp->d_name);
+        //If a file that begins with 'event' is found
+        if (cFile.compare(0, 5, "event") == 0) {
+            eventname = cFile;
+        }
+        if (cFile.compare(0, 2, "js") == 0) {
+            jsname = cFile;
+        }
+    }
+    std::cout << "Created device: /dev/input/" << this->eventname << std::endl;
+    std::cout << "Created device: /dev/input/" << this->jsname << std::endl;
     std::cout << "Created virtual device " << name << ".\n";
     std::cout << "Successfully created virtual device " << deviceid << ".\n";
     static_deviceid++;
+
 }
 
 
