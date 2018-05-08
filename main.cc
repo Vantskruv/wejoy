@@ -19,26 +19,32 @@ void updateThread(LuaScript &lScript) {
             rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
                 if (ev.type == EV_KEY) {
-                    lScript.call_value_function("button_event", joy->getLuaName(), joy->get_button_index(ev.code),
+                    int index = joy->get_button_index(ev.code);
+                    lScript.call_value_function("button_event", joy->getLuaName(), index,
                                                 ev.value);
                     lScript.call_value_function("button_event_code", joy->getLuaName(), ev.code, ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_b" + std::to_string(ev.code) + "_event",
                                                  ev.value);
+                    lScript.call_device_function(joy->getLuaName() + "_b" + std::to_string(index) + "_event",
+                                                 ev.value);
                     const char *name = libevdev_event_code_get_name(EV_KEY, ev.code);
                     if (name != NULL) {
-                        lScript.call_device_function(joy->getLuaName() + "_b" + name + "_code_event",
+                        lScript.call_device_function(joy->getLuaName() + "_b" + name + "_event",
                                                      ev.value);
                     }
 
                 } else if (ev.type == EV_ABS) {
-                    lScript.call_value_function("axis_event", joy->getLuaName(), joy->get_axis_index(ev.code),
+                    int index = joy->get_axis_index(ev.code);
+                    lScript.call_value_function("axis_event", joy->getLuaName(), index,
                                                 ev.value);
                     lScript.call_value_function("axis_event_code", joy->getLuaName(), ev.code, ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(ev.code) + "_event",
                                                  ev.value);
+                    lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(index) + "_event",
+                                                 ev.value);
                     const char *name = libevdev_event_code_get_name(EV_ABS, ev.code);
                     if (name != NULL) {
-                        lScript.call_device_function(joy->getLuaName() + "_a" + name + "_code_event",
+                        lScript.call_device_function(joy->getLuaName() + "_a" + name + "_event",
                                                      ev.value);
                     }
                 }

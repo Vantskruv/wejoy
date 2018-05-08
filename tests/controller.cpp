@@ -1,6 +1,6 @@
 #include "controller.h"
-#include "../buttons_ref.h"
-#include "../suinput.h"
+#include "buttons_ref.h"
+#include "suinput.h"
 #include <cstring>    //memset
 #include <string>
 #include <iostream> //cout
