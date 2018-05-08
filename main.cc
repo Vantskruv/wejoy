@@ -30,7 +30,7 @@ void updateThread(LuaScript &lScript) {
                                                  ev.value);
                     const char *name = libevdev_event_code_get_name(EV_KEY, ev.code);
                     if (name != NULL) {
-                        lScript.call_device_function(joy->getLuaName() + "_b" + name + "_event",
+                        lScript.call_device_function(joy->getLuaName() + name + "_event",
                                                      ev.value);
                     }
 
@@ -45,7 +45,7 @@ void updateThread(LuaScript &lScript) {
                                                  ev.value);
                     const char *name = libevdev_event_code_get_name(EV_ABS, ev.code);
                     if (name != NULL) {
-                        lScript.call_device_function(joy->getLuaName() + "_a" + name + "_event",
+                        lScript.call_device_function(joy->getLuaName() + name + "_event",
                                                      ev.value);
                     }
                 }

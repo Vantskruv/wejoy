@@ -14,25 +14,16 @@
 #include "joystick.h"
 
 #include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
 
-#include <vector>
 #include "unistd.h"
 #include <libevdev-1.0/libevdev/libevdev.h>
 
-#include <stdexcept>
 #include <cstring>
-#include <libudev.h>
 #include <algorithm> //find
-
-#include <sys/ioctl.h>
-
-#include "input_events.h"
 
 Joystick::Joystick(LuaStick stick) {
     int current = 0;
@@ -55,7 +46,8 @@ Joystick::Joystick(LuaStick stick) {
             struct libevdev *_dev = NULL;
             rc = libevdev_new_from_fd(_fd, &_dev);
             if (rc < 0) {
-                fprintf(stderr, "Skipping device /dev/input/%s, as it reported an error: (%s)\n", dirp->d_name, strerror(-rc));
+                fprintf(stderr, "Skipping device /dev/input/%s, as it reported an error: (%s)\n", dirp->d_name,
+                        strerror(-rc));
                 //skip invalid devices
                 closeJoy();
                 continue;
@@ -79,14 +71,15 @@ Joystick::Joystick(LuaStick stick) {
 }
 
 void Joystick::initMaps() {
-    std::map<int, const char*>::iterator it;
-    for (int i =0; i < ABS_MAX; i++) {
+    std::map<int, const char *>::iterator it;
+    for (int i = 0; i < ABS_MAX; i++) {
         if (libevdev_has_event_code(dev, EV_ABS, i)) {
             axisMappingsRev[i] = static_cast<int>(axisMappings.size());
             axisMappings.push_back(i);
         }
     }
-    for (int i =0; i < KEY_MAX; i++) {
+    axesData.resize(axisMappings.size());
+    for (int i = 0; i < KEY_MAX; i++) {
         if (libevdev_has_event_code(dev, EV_KEY, i)) {
             buttonMappingsRev[i] = static_cast<int>(buttonMappings.size());
             buttonMappings.push_back(i);
@@ -104,24 +97,20 @@ void Joystick::closeJoy() {
 }
 
 void Joystick::handleEvent(input_event ev) {
-    if(ev.type == EV_KEY)
-    {
+    if (ev.type == EV_KEY) {
         int index = get_button_index(ev.code);
         buttonFlags = (ev.value) ? (buttonFlags | 1ul << index) : (buttonFlags & ~(1uL << index));
-    }//if
-    else if(ev.type == EV_ABS)
-    {
-        axesData[get_axis_index(ev.code)] = ev.value;
-    }//if
+    } else if (ev.type == EV_ABS) {
+        int index = get_axis_index(ev.code);
+        axesData[index] = ev.value;
+    }
 }
 
-int Joystick::get_button_status(int type)
-{
+int Joystick::get_button_status(int type) {
     return (buttonFlags & (1ul << type)) != 0;
 }
 
-int Joystick::get_axis_status(int _i)
-{
+int Joystick::get_axis_status(int _i) {
     return axesData[_i];
 }
 
@@ -133,23 +122,19 @@ int Joystick::get_axis_max(int _type) {
     return libevdev_get_abs_maximum(dev, static_cast<unsigned int>(_type));
 }
 
-int Joystick::get_button_index(int _type)
-{
+int Joystick::get_button_index(int _type) {
     return buttonMappingsRev[_type];
 }
 
-int Joystick::get_axis_index(int _type)
-{
+int Joystick::get_axis_index(int _type) {
     return axisMappingsRev[_type];
 }
 
-int Joystick::get_button_type(int _index)
-{
+int Joystick::get_button_type(int _index) {
     return buttonMappings[_index];
 }
 
-int Joystick::get_axis_type(int _index)
-{
+int Joystick::get_axis_type(int _index) {
     return axisMappings[_index];
 }
 
