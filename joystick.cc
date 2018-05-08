@@ -103,12 +103,26 @@ void Joystick::closeJoy() {
     _fd = -1;
 }
 
-int Joystick::get_button_status(int _type) {
-    return libevdev_get_event_value(dev, EV_KEY, static_cast<unsigned int>(_type));
+void Joystick::handleEvent(input_event ev) {
+    if(ev.type == EV_KEY)
+    {
+        int index = get_button_index(ev.code);
+        buttonFlags = (ev.value) ? (buttonFlags | 1ul << index) : (buttonFlags & ~(1uL << index));
+    }//if
+    else if(ev.type == EV_ABS)
+    {
+        axesData[get_axis_index(ev.code)] = ev.value;
+    }//if
 }
 
-int Joystick::get_axis_status(int _type) {
-    return libevdev_get_event_value(dev, EV_ABS, static_cast<unsigned int>(_type));
+int Joystick::get_button_status(int type)
+{
+    return (buttonFlags & (1ul << type)) != 0;
+}
+
+int Joystick::get_axis_status(int _i)
+{
+    return axesData[_i];
 }
 
 int Joystick::get_axis_min(int _type) {

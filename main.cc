@@ -18,6 +18,7 @@ void updateThread(LuaScript &lScript) {
             struct input_event ev;
             rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
+                joy->handleEvent(ev);
                 if (ev.type == EV_KEY) {
                     int index = joy->get_button_index(ev.code);
                     lScript.call_value_function("button_event", joy->getLuaName(), index,

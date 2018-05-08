@@ -40,6 +40,8 @@ private:
 
     struct libevdev *dev = NULL;
     int _fd = -1;
+    uint64_t buttonFlags = 0;				//Curent values of all buttons
+    std::vector<int> axesData; //Current values of all axis
     std::string name;
     std::string lua_name;
     std::vector<int> axisMappings;
@@ -91,6 +93,8 @@ public:
     int get_button_type(int _index);
 
     int get_axis_type(int _index);
+
+    void handleEvent(input_event ev);
 };
 
 #endif
