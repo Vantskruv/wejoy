@@ -19,22 +19,24 @@ void updateThread(LuaScript &lScript) {
             rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
                 if (ev.type == EV_KEY) {
-                    lScript.call_value_function("button_event",joy->getLuaName(), joy->get_button_index(ev.code), ev.value);
-                    lScript.call_value_function("button_event_code",joy->getLuaName(), ev.code, ev.value);
+                    lScript.call_value_function("button_event", joy->getLuaName(), joy->get_button_index(ev.code),
+                                                ev.value);
+                    lScript.call_value_function("button_event_code", joy->getLuaName(), ev.code, ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_b" + std::to_string(ev.code) + "_event",
                                                  ev.value);
-                    const char* name = libevdev_event_code_get_name(EV_KEY,ev.code);
+                    const char *name = libevdev_event_code_get_name(EV_KEY, ev.code);
                     if (name != NULL) {
                         lScript.call_device_function(joy->getLuaName() + "_b" + name + "_code_event",
                                                      ev.value);
                     }
 
                 } else if (ev.type == EV_ABS) {
-                    lScript.call_value_function("axis_event",joy->getLuaName(), joy->get_axis_index(ev.code), ev.value);
-                    lScript.call_value_function("axis_event_code",joy->getLuaName(), ev.code, ev.value);
+                    lScript.call_value_function("axis_event", joy->getLuaName(), joy->get_axis_index(ev.code),
+                                                ev.value);
+                    lScript.call_value_function("axis_event_code", joy->getLuaName(), ev.code, ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(ev.code) + "_event",
                                                  ev.value);
-                    const char* name = libevdev_event_code_get_name(EV_ABS,ev.code);
+                    const char *name = libevdev_event_code_get_name(EV_ABS, ev.code);
                     if (name != NULL) {
                         lScript.call_device_function(joy->getLuaName() + "_a" + name + "_code_event",
                                                      ev.value);
@@ -63,7 +65,7 @@ int l_get_joy_button_status(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_button_status(joystick->get_button_index(type));
     lua_pushnumber(L, status);
     return 1;
@@ -79,7 +81,7 @@ int l_get_joy_axis_status(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_status(joystick->get_axis_index(type));
     lua_pushnumber(L, status);
     return 1;
@@ -137,7 +139,7 @@ int l_get_joy_axis_min(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_min(joystick->get_axis_type(type));
     lua_pushnumber(L, status);
     return 1;
@@ -153,7 +155,7 @@ int l_get_joy_axis_min_code(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_min(type);
     lua_pushnumber(L, status);
     return 1;
@@ -168,7 +170,7 @@ int l_get_joy_axis_max(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_max(joystick->get_axis_type(type));
     lua_pushnumber(L, status);
     return 1;
@@ -183,7 +185,7 @@ int l_get_joy_axis_max_code(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_max(type);
     lua_pushnumber(L, status);
     return 1;
@@ -198,7 +200,7 @@ int l_get_joy_axis_count(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_num_axes();
     lua_pushnumber(L, status);
     return 1;
@@ -211,11 +213,12 @@ int l_get_joy_button_count(lua_State *L) {
         lua_pushnumber(L, -1);
         return 1;
     }
-    Joystick* joystick = GLOBAL::joyList[id];
+    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_num_buttons();
     lua_pushnumber(L, status);
     return 1;
 }
+
 //Called from user via lua script
 int l_send_vjoy_axis_event(lua_State *_L) {
     unsigned int id = lua_tonumber(_L, 1);
@@ -273,6 +276,7 @@ bool populate_devices(LuaScript &lScript) {
         bool noerr;
         val.name = lScript.get<std::string>("devices." + s + ".name", noerr);
         if (!noerr) {
+            val.name = "";
             val.product_id = lScript.get<int>("devices." + s + ".productid", noerr);;
             if (!noerr) break;
             val.vendor_id = lScript.get<int>("devices." + s + ".vendorid", noerr);
@@ -287,7 +291,12 @@ bool populate_devices(LuaScript &lScript) {
     for (unsigned int i = 0; i < dList.size(); i++) {
         Joystick *cJoy = new Joystick(dList[i]);
         if (!cJoy->isFound()) {
-            std::cout << "WARNING: Joystick " << dList[i].name << "[" << dList[i].index << "] is not found.\n";
+            if (dList[i].name.empty()) {
+                std::cout << "WARNING: Joystick vid:" << dList[i].vendor_id << " pid:" << dList[i].product_id
+                          << " at index " << dList[i].index << " is not found.\n";
+            } else {
+                std::cout << "WARNING: Joystick " << dList[i].name << "[" << dList[i].index << "] is not found.\n";
+            }
             delete cJoy;
             return false;
         }
@@ -302,7 +311,7 @@ bool populate_devices(LuaScript &lScript) {
 bool populate_virtual_devices(LuaScript &lScript) {
     std::vector<std::array<int, 2>> dList;
     std::array<int, 2> val;
-    for (std::string s : lScript.getTableKeys("v_devices")) {
+    for (const std::string &s : lScript.getTableKeys("v_devices")) {
         bool noerr;
         val[0] = lScript.get<int>("v_devices." + s + ".buttons", noerr);
         if (!noerr) break;
@@ -313,8 +322,8 @@ bool populate_virtual_devices(LuaScript &lScript) {
     }
 
     //Create and populate the list of user defined virtual devices
-    for (unsigned int i = 0; i < dList.size(); i++) {
-        CVirtualJoy *vJoy = new CVirtualJoy(dList[i][0], dList[i][1]);
+    for (auto &i : dList) {
+        auto *vJoy = new CVirtualJoy(i[0], i[1]);
         if (!vJoy->isOpen()) return false;
         GLOBAL::vJoyList.push_back(vJoy);
     }//for

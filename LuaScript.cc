@@ -3,6 +3,7 @@
 #include <errno.h>
 #include "input_events.h"
 #include <cstring>
+#include <map>
 #include "buttons_ref.h"
 
 LuaScript::LuaScript(const std::string &filename) {
@@ -11,7 +12,7 @@ LuaScript::LuaScript(const std::string &filename) {
         std::cout << "Error: failed to load (" << filename << ")" << std::endl;
         const char *s = strerror(errno);
         std::cout << lua_tostring(L, -1) << std::endl << s << std::endl;
-        L = 0;
+        L = nullptr;
         return;
     }
 
