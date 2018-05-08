@@ -5,7 +5,10 @@
 #include <fcntl.h>
 #include <zconf.h>
 #include <signal.h>
+#include <wait.h>
 #include "controller.h"
+#define CATCH_CONFIG_RUNNER
+#include "catch.hpp"
 //
 // Created by sanjay on 5/8/18.
 //
@@ -50,33 +53,50 @@ struct libevdev *searchForJoyStick(const std::string _name) {
     return dev;
 }
 
-int main(int argc, char **argv) {
-    Controller vjoy(3, 2, 0x044f, 0x0402, "Thrustmaster Warthog Joystick");
-    Controller vthrottle(3, 2, 0x044f, 0x0404, "Thrustmaster Warthog Throttle");
+Controller *vjoy;
+Controller *vthrottle;
+struct libevdev *keyboard;
+struct libevdev *controller;
+struct input_event ev_k;
+struct input_event ev_c;
+void next_event(){
+    libevdev_next_event(keyboard, LIBEVDEV_READ_FLAG_NORMAL, &ev_k);
+    libevdev_next_event(controller, LIBEVDEV_READ_FLAG_NORMAL, &ev_c);
+}
+SCENARIO( "Joystick Buttons work", "[vector]" ) {
+    GIVEN("example.lua with two joysticks") {
+        WHEN("The first button on the throttle is pressed") {
+            vthrottle->send_button_event(0,1);
+            usleep(100);
+            next_event();
+            THEN("expect the a key to be pressed") {
+                REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_A) == 1);
+            }
+        }
+    }
+
+}
+int main( int argc, char* argv[] ) {
+    vjoy = new Controller(3, 2, 0x044f, 0x0402, "Thrustmaster Warthog Joystick");
+    vthrottle = new Controller(3, 2, 0x044f, 0x0404, "Thrustmaster Warthog Throttle");
     pid_t pid = fork();
-    if (pid == -1)
-    {
-        std::clog << "fork() failed: " << strerror(errno) << std::endl;
-    }
-    else if (pid == 0)
-    {
-        char * args[]={const_cast<char *>("../wejoy"), const_cast<char *>("../../scripts/example.lua"), 0};
+    if (pid == 0) {
+        char *args[] = {const_cast<char *>("../wejoy"), const_cast<char *>("../../scripts/example.lua"), 0};
         execv(args[0], args);
-    }
-    else
-    {
-        struct libevdev *keyboard = nullptr;
+    } else {
         do {
             keyboard = searchForJoyStick("WeJoy Virtual Keyboard");
         } while (keyboard == nullptr);
-        struct libevdev *controller = searchForJoyStick("WeJoy Virtual Device 0");
-        vjoy.send_button_event(0,1);
-        vthrottle.send_button_event(0,1);
-        vjoy.send_axis_event(0,35565);
-        vthrottle.send_axis_event(0,35565);
-        std::cout << libevdev_get_event_value(keyboard, EV_KEY, KEY_A) <<std::endl;
-        while (getchar() != 'q');
-        kill( pid, SIGKILL);
+        controller = searchForJoyStick("WeJoy Virtual Device 0");
+
+
+        int result = Catch::Session().run( argc, argv );
+        kill( pid, SIGINT);
+        int status = 0;
+        wait(&status);
+
+        return result;
     }
+
     return 0;
 }
