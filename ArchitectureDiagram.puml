@@ -1,0 +1,19 @@
+@startuml
+[SUInput]
+[UInput]
+[Lua]
+[JoyStick]
+[Real Joystick Device] --> [JoyStick]
+package "WeJoy" {
+    JoyStick --> [Event Loop Thread]
+    [Event Loop Thread] --> Lua
+    [Lua handler] --> [SUInput]
+}
+Lua --> [User Script]
+[User Script] --> [Lua handler]
+SUInput --> [UInput]
+[UInput] --> [Virtual Keyboard]
+[UInput] --> [Virtual Joystick]
+
+
+@enduml
