@@ -1,0 +1,31 @@
+@startuml
+[Lua]
+[suinput]
+[libevdev test]
+[suinput test] as "suinput"
+package "Test" {
+    [Test Case Then] --> [suinput test]
+    [libevdev test] --> [Test Case Verification]
+}
+[uinput test] --> [evdev]
+[suinput test] --> [uinput test]
+[libevdev test] as "libevdev"
+[evdev test] as "evdev"
+[evdev] --> [libevdev]
+[uinput test] as "uinput"
+package "WeJoy" {
+    libevdev --> [Event Loop Thread]
+    [Event Loop Thread] --> Lua
+    [Lua handler] --> [suinput]
+}
+[Lua] --> [User Script]
+[User Script] --> [Lua handler]
+suinput --> [uinput]
+[uinput] --> [Virtual Keyboard]
+[uinput] --> [Virtual Joystick]
+[Virtual Keyboard] --> [evdev test]
+[Virtual Joystick] --> [evdev test]
+[evdev test] --> [libevdev test]
+
+
+@enduml
