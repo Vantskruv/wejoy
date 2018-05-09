@@ -38,3 +38,9 @@ and `scripts/example.lua` for the original syntax.
 # Testing
 The testing framework uses `Catch2`, and it works by creating a virtual joystick, then manipulating 
 it and checking that output from the wejoy virtual joysticks / keyboard make sense.
+
+# Testing the original code
+A modified version of the original code is provided that has no architectural changes, but instead 
+has modified udev code so it does not have a reliance on USB anymore. This means all the new tests can run
+- however, it appears the original code has issues with checking if a button is down after pushing it,
+and the timings have all been changed as the original code base was slower to update.
