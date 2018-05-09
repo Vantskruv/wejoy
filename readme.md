@@ -9,6 +9,11 @@ cmake .
 # How to run
 sudo ./wejoy path-to-script
 
+# Original Code:
+the original_code folder contains the original code, modified to disable the hard requirement on
+USB devices. the tests have also been copied over, as the original code required much longer timings
+so the tests were incompatible.
+
 # Requirements
 A linux computer, with lua5.2, uinput, libevdev, and sudo privileges
 Note that if you would like to test the application with real hardware, 
