@@ -1,26 +1,60 @@
-# WeJoy
+# wejoy v0.1
 
-# How to clone
-- `git clone git@gitlab.ecs.vuw.ac.nz:swen301-2018/govindsanj/SWEN301-Project-2.git`
+'wejoy' is a tool to read physical joystick devices, create virtual joystick devices and output keyboard presses on a Linux system. It uses helpful sourcecode which in somewhat degree is modified:
+* https://github.com/tuomasjjrasanen/libsuinput
+* https://github.com/drewnoakes/joystick
+* https://github.com/EliasD/unnamed_lua_binder/
 
-# How to build and run tests
-- Install a copy of vagrant (this is already provided on university machines)
-- run `./build_and_test.sh`
 
-# Note about running remotely
-- If you plan on sshing into uni, use embassy.ecs.vuw.ac.nz not greta-pt@ecs.vuw.ac.nz, as greta-pt is not powerful enough to run a virtual machine.
+# Features ----
+* Create one or more virtual joysticks with a custom number of buttons and axes.
+* Read physical joystick buttons and and axes events.
+* Send keyboard events
+* Lua scripting for conditional purposes
 
-# Original Code:
-the original_code folder contains the original code, modified to disable the hard requirement on
-USB devices. the tests have also been copied over, as the original code required much longer timings
-so the tests were incompatible.
 
-# How do scripts work
-Check an example script such as `scripts/wiimote_guitar.lua` for new features, 
-and `scripts/example.lua` for the original syntax.
+# Known requirements ----
+* liblua version 5.2 or later.
+* libudev
 
-# Testing the original code
-A modified version of the original code is provided that has no architectural changes, but instead 
-has modified udev code so it does not have a reliance on USB anymore. This means all the new tests can run - however,
- it appears the original code has issues with checking if a button is down after pushing it,
-and the timings have all been changed as the original code base was slower to update.
+Development files for liblua and libudev are required for compliation:
+
+1. Search for which version of liblua you may have in your version of Linux distribution:
+
+$ apt-cache search liblua
+
+You may have liblua5.2 or a newer version.
+
+Then install the developments files of you version of liblua and libudev i.e:
+* $ sudo apt-get install liblua5.x-dev libudev-dev
+
+Also install the shared libraries of liblua and libudev i.e:
+* $ sudo apt-get install liblua5.x-0 libudev1
+
+Where 5.x is the available liblua version of your distro.
+
+
+# Compile ----
+* $ sh make.sh
+* This will create an executable called 'wejoy' which is run from the terminal.
+* NOTE: If another version than liblua 5.2 is installed, the make.sh needs to be edited for the current version installed.
+
+
+# Usage ----
+If the module uinput is not loaded on your system, you need to manually load it:
+* $ sudo modprobe uinput
+*
+* As for now, 'wejoy' need to be run as root:
+* $ sudo ./wejoy script.lua
+* Where script.lua is your preferred configuration file.
+*
+* You can quit 'wejoy' by pressing 'q' end then 'ENTER'.
+
+# LUA scripting ----
+* Please read the example.lua and warthog_throttle.lua to learn how to customize your script.
+* Also read the keycodes_ref.txt for keyboard reference. These variables are globally accessable in your LUA script.
+
+
+# KNOWN BUGS ----
+* An output of error loading last not set index of virtual device and physical device is shown, which should not be an error. This is however not fatal.
+* Every axis and button is not tested to work fully.
