@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 export VAGRANT_DETECTED_OS=cygwin
 echo "Booting VM and running tests."
-yes | vagrant destroy
+vagrant destroy -f
 vagrant up
-yes | vagrant destroy
+vagrant destroy -f
 clear
 echo "Results of testing the modified architecture:"
 cat modified_architecture.log
