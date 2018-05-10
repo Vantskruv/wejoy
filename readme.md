@@ -7,6 +7,9 @@
 - Install a copy of vagrant (this is already provided on university machines)
 - run `./build_and_test.sh`
 
+# Note about running remotely
+- If you plan on sshing into uni, use embassy.ecs.vuw.ac.nz not greta-pt@ecs.vuw.ac.nz, as greta-pt is not powerful enough to run a virtual machine.
+
 # Original Code:
 the original_code folder contains the original code, modified to disable the hard requirement on
 USB devices. the tests have also been copied over, as the original code required much longer timings
