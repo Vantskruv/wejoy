@@ -10,4 +10,5 @@ target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 # Make test executable
 set(TEST_SOURCES test_main.cpp controller.cpp suinput.c)
 add_executable(tests ${TEST_SOURCES})
+target_compile_features(tests PUBLIC cxx_std_11)
 target_link_libraries(tests Catch udev pthread X11 lua5.2 evdev)

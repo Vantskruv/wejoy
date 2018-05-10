@@ -24,4 +24,6 @@ add_executable(wejoy ${EXE_SOURCE_FILES})
 
 target_compile_features(wejoy PUBLIC cxx_std_11)
 
-TARGET_LINK_LIBRARIES(wejoy udev pthread X11 lua5.2 evdev libwejoy)
+TARGET_LINK_LIBRARIES(libwejoy udev pthread X11 lua5.2 evdev)
+
+TARGET_LINK_LIBRARIES(wejoy libwejoy)

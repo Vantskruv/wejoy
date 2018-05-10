@@ -89,6 +89,7 @@ SCENARIO("Joystick Buttons work", "[example.lua]") {
                 next_event();
                 REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_A) == 1);
             }
+            std::cout << std::endl;
         }
         WHEN("The first button on the throttle is released") {
             vthrottle->send_button_event(0, 0);
@@ -107,6 +108,7 @@ SCENARIO("Joystick Buttons work", "[example.lua]") {
                 next_event();
                 REQUIRE(libevdev_get_event_value(keyboard, EV_KEY, KEY_A) == 1);
             }
+            std::cout << std::endl;
         }
         WHEN("The second button on the throttle is released") {
             vthrottle->send_button_event(1, 0);
@@ -231,7 +233,6 @@ SCENARIO("Joystick Buttons work", "[example.lua]") {
                 }
             }
         }
-
     }
 
 }
@@ -254,7 +255,7 @@ int main(int argc, char *argv[]) {
 
 
         int result = Catch::Session().run(argc, argv);
-        kill(pid, SIGINT);
+        kill(pid, SIGKILL);
         int status = 0;
         wait(&status);
 
