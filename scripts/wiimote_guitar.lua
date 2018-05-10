@@ -29,13 +29,13 @@ end
 function main()
     devices.d0.min = {}
     devices.d0.max = {}
-    for i=0,get_axis_count(0) do
+    for i=0,get_axis_count(0)-1 do
         devices.d0.min[i+1] = get_axis_min(0,i);
         devices.d0.max[i+1] = get_axis_max(0,i);
     end
     devices.d1.min = {}
     devices.d1.max = {}
-    for i=0,get_axis_count(1) do
+    for i=0,get_axis_count(1)-1 do
         devices.d1.min[i+1] = get_axis_min(1,i);
         devices.d1.max[i+1] = get_axis_max(1,i);
     end

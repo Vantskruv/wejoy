@@ -44,8 +44,8 @@ Where 5.x is the available liblua version of your distro.
 If the module uinput is not loaded on your system, you need to manually load it:
 * $ sudo modprobe uinput
 *
-* As for now, 'wejoy' need to be run as root:
-* $ sudo ./wejoy script.lua
+* And then it can be run with
+* /wejoy script.lua
 * Where script.lua is your preferred configuration file.
 *
 * You can quit 'wejoy' by pressing 'q' end then 'ENTER'.
@@ -56,5 +56,4 @@ If the module uinput is not loaded on your system, you need to manually load it:
 
 
 # KNOWN BUGS ----
-* An output of error loading last not set index of virtual device and physical device is shown, which should not be an error. This is however not fatal.
-* Every axis and button is not tested to work fully.
+* Tests currently require sudo privileges.

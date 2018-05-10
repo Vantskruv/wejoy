@@ -66,14 +66,14 @@ int l_send_keyboard_event(lua_State *L) {
 //Called from user via lua script
 int l_get_joy_button_status(lua_State *L) {
     unsigned int id = lua_tonumber(L, 1);
-    int type = lua_tonumber(L, 2);
+    int index = lua_tonumber(L, 2);
     if (id >= GLOBAL::joyList.size()) {
         std::cout << "ERROR get_joy_button_status: Device " << id << " does not exist.\n";
         lua_pushnumber(L, -1);
         return 1;
     }
     Joystick *joystick = GLOBAL::joyList[id];
-    int status = joystick->get_button_status(joystick->get_button_index(type));
+    int status = joystick->get_button_status(joystick->get_button_type(index));
     lua_pushnumber(L, status);
     return 1;
 }
@@ -82,14 +82,14 @@ int l_get_joy_button_status(lua_State *L) {
 //Called from user via lua script
 int l_get_joy_axis_status(lua_State *L) {
     unsigned int id = lua_tonumber(L, 1);
-    int type = lua_tonumber(L, 2);
+    int index = lua_tonumber(L, 2);
     if (id >= GLOBAL::joyList.size()) {
         std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
         lua_pushnumber(L, -1);
         return 1;
     }
     Joystick *joystick = GLOBAL::joyList[id];
-    int status = joystick->get_axis_status(joystick->get_axis_index(type));
+    int status = joystick->get_axis_status(joystick->get_button_type(index));
     lua_pushnumber(L, status);
     return 1;
 }
@@ -140,14 +140,14 @@ int l_send_vjoy_button_event(lua_State *_L) {
 //Called from user via lua script
 int l_get_joy_axis_min(lua_State *L) {
     unsigned int id = lua_tonumber(L, 1);
-    int type = lua_tonumber(L, 2);
+    int index = lua_tonumber(L, 2);
     if (id >= GLOBAL::joyList.size()) {
         std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
         lua_pushnumber(L, -1);
         return 1;
     }
     Joystick *joystick = GLOBAL::joyList[id];
-    int status = joystick->get_axis_min(joystick->get_axis_type(type));
+    int status = joystick->get_axis_min(joystick->get_axis_type(index));
     lua_pushnumber(L, status);
     return 1;
 }
@@ -171,14 +171,14 @@ int l_get_joy_axis_min_code(lua_State *L) {
 //Called from user via lua script
 int l_get_joy_axis_max(lua_State *L) {
     unsigned int id = lua_tonumber(L, 1);
-    int type = lua_tonumber(L, 2);
+    int index = lua_tonumber(L, 2);
     if (id >= GLOBAL::joyList.size()) {
         std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
         lua_pushnumber(L, -1);
         return 1;
     }
     Joystick *joystick = GLOBAL::joyList[id];
-    int status = joystick->get_axis_max(joystick->get_axis_type(type));
+    int status = joystick->get_axis_max(joystick->get_axis_type(index));
     lua_pushnumber(L, status);
     return 1;
 }
