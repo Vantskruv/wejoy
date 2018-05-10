@@ -14,7 +14,6 @@ void updateThread(LuaScript& lScript)
 	while(bPoll)
 	for(unsigned int i=0; i<GLOBAL::joyList.size(); i++)
 	{
-		usleep(1000);
 		if(GLOBAL::joyList[i]->readJoy(&event))
 		{
 			if(event.isButton()) lScript.call_device_function("d" + std::to_string(i) + "_b" + std::to_string(event.number) + "_event", event.value);

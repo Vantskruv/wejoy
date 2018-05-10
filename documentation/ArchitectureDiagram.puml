@@ -2,10 +2,10 @@
 [suinput]
 [uinput]
 [Lua]
-[joystick]
-[Real Joystick Device] --> [joystick]
+[joydev]
+[Real Joystick Device] --> [joydev]
 package "WeJoy" {
-    [joystick] --> [Event Loop Thread]
+    [joydev] --> [Event Loop Thread]
     [Event Loop Thread] --> Lua
     [Lua handler] --> [suinput]
 }

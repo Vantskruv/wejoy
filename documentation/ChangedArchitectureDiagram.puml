@@ -5,7 +5,7 @@
 [Any Joystick Device] --> [evdev]
 [evdev] --> [libevdev]
 package "WeJoy" {
-    libevdev --> [Event Loop Thread]
+    libevdev --> [Event Loopone  Thread]
     [Event Loop Thread] --> Lua
     [Lua handler] --> [suinput]
 }

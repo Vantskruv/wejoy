@@ -73,11 +73,6 @@ void next_event() {
     while (libevdev_has_event_pending(controller) && ev_c.type == EV_SYN) {
         libevdev_next_event(controller, LIBEVDEV_READ_FLAG_NORMAL, &ev_c);
     }
-//    printf("Event: %s %s %i %i %d\n",
-//           libevdev_event_type_get_name(ev_c.type),
-//           libevdev_event_code_get_name(ev_c.type, ev_c.code),
-//           ev_c.type, ev_c.code,
-//           ev_c.value);
 }
 
 SCENARIO("Joystick Buttons work", "[example.lua]") {
