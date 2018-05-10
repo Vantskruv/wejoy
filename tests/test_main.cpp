@@ -156,6 +156,9 @@ SCENARIO("Joystick Buttons work", "[example.lua]") {
         }
         WHEN("The first button on the joystick is released") {
             THEN("expect the first axis to equal the input first axis") {
+                vjoy->send_button_event(1, 0);
+                sleep(1);
+                next_event();
                 next_event();
                 for (int i = MIN_ABS_VAL; i < MAX_ABS_VAL; i += 1000) {
                     vjoy->send_axis_event(0, i);
@@ -166,38 +169,45 @@ SCENARIO("Joystick Buttons work", "[example.lua]") {
             }
         }
 
-        WHEN("The first button on the joystick is pressed") {
-            THEN("expect the second axis to equal the input second axis") {
+        WHEN("The second button on the joystick is pressed") {
+            THEN("expect the second axis to equal the input second axis but inverted") {
+                vjoy->send_button_event(1, 1);
+                sleep(1);
+                next_event();
+                next_event();
                 next_event();
                 for (int i = MIN_ABS_VAL; i < MAX_ABS_VAL; i += 1000) {
                     vjoy->send_axis_event(1, i);
                     usleep(1000);
                     next_event();
-                    REQUIRE(libevdev_get_event_value(controller, EV_ABS, buttons_ref::AXES[1]) == i);
+                    REQUIRE(libevdev_get_event_value(controller, EV_ABS, buttons_ref::AXES[1]) == -i);
                 }
             }
         }
 
-        WHEN("The first button on the joystick is released") {
-            THEN("expect the first axis to equal the input first axis, but inverted") {
-                vjoy->send_button_event(0, 1);
+        WHEN("The second button on the joystick is released") {
+            THEN("expect the first axis to equal the input first axis") {
+                vjoy->send_button_event(1, 0);
                 sleep(1);
+                next_event();
+                next_event();
                 next_event();
                 for (int i = MIN_ABS_VAL; i < MAX_ABS_VAL; i += 1000) {
                     vjoy->send_axis_event(0, i);
                     usleep(1000);
                     next_event();
-                    REQUIRE(libevdev_get_event_value(controller, EV_ABS, buttons_ref::AXES[0]) == -i);
+                    REQUIRE(libevdev_get_event_value(controller, EV_ABS, buttons_ref::AXES[0]) == i);
                 }
             }
         }
 
 
 
-        WHEN("The first button on the joystick is pressed") {
+        WHEN("The second button on the joystick is pressed") {
             THEN("expect the second axis to equal the input second axis, but inverted") {
                 vjoy->send_button_event(1, 1);
                 sleep(1);
+                next_event();
                 next_event();
                 next_event();
                 for (int i = MIN_ABS_VAL; i < MAX_ABS_VAL; i += 1000) {
@@ -210,7 +220,7 @@ SCENARIO("Joystick Buttons work", "[example.lua]") {
         }
 
 
-        WHEN("The first button on the joystick is pressed") {
+        WHEN("The second button on the joystick is pressed") {
             THEN("expect the first axis and second axis to be an inverted version of the input joystick's first and second axis") {
                 for (int i = MIN_ABS_VAL; i < MAX_ABS_VAL; i += 1000) {
                     vjoy->send_axis_event(0, i);
@@ -225,7 +235,7 @@ SCENARIO("Joystick Buttons work", "[example.lua]") {
                     REQUIRE(libevdev_get_event_value(controller, EV_ABS, buttons_ref::AXES[0]) == -i);
                     next_event();
                     REQUIRE(libevdev_get_event_value(controller, EV_ABS, buttons_ref::AXES[1]) == -i);
-                    vjoy->send_button_event(0, 1);
+                    vjoy->send_button_event(1, 0);
                     usleep(1000);
                     next_event();
                     next_event();
