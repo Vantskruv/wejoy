@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 export VAGRANT_DETECTED_OS=cygwin
 echo "Booting VM and running tests."
+yes | vagrant destroy
 vagrant up
 yes | vagrant destroy
 clear
