@@ -1,17 +1,25 @@
 @startuml
+left to right direction
 [Lua]
 [suinput]
 [libevdev test]
 [suinput test] as "suinput"
 package "Test" {
+    interface R as "Run Tests"
+    interface R2 as "Test Results"
+    [Catch2end] as "Catch2"
+    R --> [Catch2]
+    [Catch2] --> [Test Case Then]
     [Test Case Then] --> [suinput test]
     [libevdev test] --> [Test Case Verification]
+    [Test Case Verification] --> [Catch2end]
+    [Catch2end] --> R2
 }
 [uinput test] --> [evdev]
-[suinput test] --> [uinput test]
+[suinput test] -> [uinput test]
 [libevdev test] as "libevdev"
 [evdev test] as "evdev"
-[evdev] --> [libevdev]
+[evdev] -> [libevdev]
 [uinput test] as "uinput"
 package "WeJoy" {
     libevdev --> [Event Loop Thread]
@@ -25,7 +33,7 @@ suinput --> [uinput]
 [uinput] --> [Virtual Joystick]
 [Virtual Keyboard] --> [evdev test]
 [Virtual Joystick] --> [evdev test]
-[evdev test] --> [libevdev test]
+[evdev test] -> [libevdev test]
 
 
 @enduml
