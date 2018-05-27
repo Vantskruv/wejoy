@@ -1,9 +1,10 @@
 #include "LuaScript.h"
 #include <linux/uinput.h>    //Reference to keycodes
-#include <errno.h>
+#include <cerrno>
 #include "input_events.h"
 #include <cstring>
 #include <map>
+#include <assert.h>
 #include "buttons_ref.h"
 
 LuaScript::LuaScript(const std::string &filename) {
@@ -44,7 +45,7 @@ std::vector<std::string> LuaScript::getAllGlobals() {
 
 std::vector<int> LuaScript::getIntVector(const std::string &name) {
     std::vector<int> v;
-    lua_gettostack(name.c_str());
+    lua_gettostack(name);
     if (lua_isnil(L, -1)) { // array is not found
         return std::vector<int>();
     }
@@ -59,7 +60,7 @@ std::vector<int> LuaScript::getIntVector(const std::string &name) {
 
 std::vector<std::string> LuaScript::getStringVector(const std::string &name) {
     std::vector<std::string> v;
-    lua_gettostack(name.c_str());
+    lua_gettostack(name);
     if (lua_isnil(L, -1)) { // array is not found
         return std::vector<std::string>();
     }
@@ -84,10 +85,10 @@ std::vector<std::string> LuaScript::getTableKeys(const std::string &name) {
             "end"; // function for getting table keys
     luaL_loadstring(L,
                     code.c_str()); // execute code
-    lua_pcall(L, 0, 0, 0);
+    lua_call(L, 0, 0);
     lua_getglobal(L, "getKeys"); // get function
     lua_pushstring(L, name.c_str());
-    lua_pcall(L, 1, 1, 0); // execute function
+    lua_call(L, 1, 1); // execute function
     std::string test = lua_tostring(L, -1);
     std::vector<std::string> strings;
     std::string temp;
@@ -104,25 +105,35 @@ std::vector<std::string> LuaScript::getTableKeys(const std::string &name) {
 }
 
 
-//void LuaScript::call_device_function(const device_function& df, int value)
 void LuaScript::call_device_function(const std::string &str_func, int value) {
-    //lua_getglobal(L, df.lfCall.c_str());
     lua_getglobal(L, str_func.c_str());
-    lua_pushnumber(L, value);
-    lua_pcall(L, 1, 0, 0);        //Lua handle, number of arguments, number of return values, error code
+    if (lua_isfunction(L, lua_gettop(L))) {
+        lua_pushnumber(L, value);
+        lua_call(L, 1, 0);
+    } else {
+        lua_pop(L,1);
+    }
 }
 
 void LuaScript::call_value_function(std::string function, std::string name, int axis, int value) {
     lua_getglobal(L, function.c_str());
-    lua_pushstring(L, name.c_str());
-    lua_pushnumber(L, axis);
-    lua_pushnumber(L, value);
-    lua_pcall(L, 3, 0, 0);        //Lua handle, number of arguments, number of return values, error code
+    if (lua_isfunction(L, lua_gettop(L))) {
+        lua_pushstring(L, name.c_str());
+        lua_pushnumber(L, axis);
+        lua_pushnumber(L, value);
+        lua_call(L, 3, 0);
+    } else {
+        lua_pop(L,1);
+    }
 }
 
 void LuaScript::call_main_function() {
     lua_getglobal(L, "main");
-    lua_pcall(L, 0, 0, 0);        //Lua handle, number of arguments, number of return values, error code
+    if (lua_isfunction(L, lua_gettop(L))) {
+        lua_call(L, 0, 0);
+    } else {
+        lua_pop(L,1);
+    }
 }
 
 void LuaScript::pushcfunction(int (*_func)(lua_State *), const std::string &_name) {

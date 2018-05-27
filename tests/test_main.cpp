@@ -4,7 +4,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <zconf.h>
-#include <signal.h>
+#include <csignal>
 #include <wait.h>
 #include "controller.h"
 
@@ -16,7 +16,7 @@
 // Created by sanjay on 5/8/18.
 //
 
-struct libevdev *searchForJoyStick(const std::string _name) {
+struct libevdev *searchForJoyStick(const std::string &_name) {
     struct libevdev *dev = nullptr;
     std::string dir("/dev/input/");
 
@@ -34,7 +34,7 @@ struct libevdev *searchForJoyStick(const std::string _name) {
         //If a file that begins with 'event' is found
         if (cFile.compare(0, 5, "event") == 0) {
             fd = open(("/dev/input/" + cFile).c_str(), O_RDONLY | O_NONBLOCK);
-            int rc = 1;
+            int rc;
             struct libevdev *_dev = nullptr;
             rc = libevdev_new_from_fd(fd, &_dev);
             if (rc < 0) {
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
     vthrottle = new Controller(3, 2, 0x044f, 0x0404, "Thrustmaster Warthog Throttle");
     pid_t pid = fork();
     if (pid == 0) {
-        char *args[] = {const_cast<char *>("../wejoy"), const_cast<char *>("../../scripts/example.lua"), 0};
+        char *args[] = {const_cast<char *>("../wejoy"), const_cast<char *>("../../scripts/example.lua"), nullptr};
         execv(args[0], args);
     } else {
         do {

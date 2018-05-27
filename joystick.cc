@@ -32,18 +32,18 @@ Joystick::Joystick(LuaStick stick) {
     //Open '/dev/input' directory
     DIR *dp;
     struct dirent *dirp;
-    if ((dp = opendir(dir.c_str())) == NULL) {
+    if ((dp = opendir(dir.c_str())) == nullptr) {
         std::cout << "Error(" << errno << ") opening " << dir << '\n';
         return;
     }
     //Read '/dev/input' directory
-    while ((dirp = readdir(dp)) != NULL) {
+    while ((dirp = readdir(dp)) != nullptr) {
         std::string cFile(dirp->d_name);
         //If a file that begins with 'event' is found
         if (cFile.compare(0, 5, "event") == 0) {
             openPath("/dev/input/" + cFile);
             int rc = 1;
-            struct libevdev *_dev = NULL;
+            struct libevdev *_dev = nullptr;
             rc = libevdev_new_from_fd(_fd, &_dev);
             if (rc < 0) {
                 fprintf(stderr, "Skipping device /dev/input/%s, as it reported an error: (%s)\n", dirp->d_name,

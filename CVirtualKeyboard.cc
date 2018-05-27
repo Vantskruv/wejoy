@@ -24,7 +24,7 @@ void CVirtualKeyboard::init() {
 
     std::cout << "Creating virtual keyboard device.\n";
     //Create and initialize the device
-    struct uinput_user_dev user_dev;
+    struct uinput_user_dev user_dev{};
     memset(&user_dev, 0, sizeof(struct uinput_user_dev));
     std::string dName = "WeJoy Virtual Keyboard";
     strcpy(user_dev.name, dName.c_str());

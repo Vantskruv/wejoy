@@ -43,7 +43,7 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes) {
 
     std::cout << "Creating virtual device " << deviceid << ".\n";
     //Create and initialize the device
-    struct uinput_user_dev user_dev;
+    struct uinput_user_dev user_dev{};
     memset(&user_dev, 0, sizeof(struct uinput_user_dev));
     std::string dName = "WeJoy Virtual Device " + std::to_string(deviceid);
     strcpy(user_dev.name, dName.c_str());
@@ -83,7 +83,7 @@ int CVirtualJoy::getDeviceid() {
 }
 
 int CVirtualJoy::get_button_status(int type) {
-    return (buttonFlags & (1ul << type) ? true : false);
+    return (buttonFlags & (1ul << type)) != 0;
 }
 
 

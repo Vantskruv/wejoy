@@ -15,7 +15,7 @@ extern "C" {
 
 class LuaScript {
 public:
-    LuaScript(const std::string &);
+    explicit LuaScript(const std::string &);
 
     ~LuaScript();
 
@@ -36,7 +36,7 @@ public:
 
     void pushcfunction(int (*)(lua_State *), const std::string &);
 
-    bool isOpen() { return L; };
+    bool isOpen() { return static_cast<bool>(L); };
 
     inline void clean() {
         int n = lua_gettop(L);
@@ -69,9 +69,9 @@ public:
 
     bool lua_gettostack(const std::string &variableName) {
         level = 0;
-        std::string var = "";
-        for (unsigned int i = 0; i < variableName.size(); i++) {
-            if (variableName.at(i) == '.') {
+        std::string var;
+        for (char i : variableName) {
+            if (i == '.') {
                 if (level == 0) {
                     lua_getglobal(L, var.c_str());
                 } else {
@@ -85,7 +85,7 @@ public:
                     level++;
                 }
             } else {
-                var += variableName.at(i);
+                var += i;
             }
         }
         if (level == 0) {

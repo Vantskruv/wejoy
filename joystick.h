@@ -38,7 +38,7 @@ class Joystick {
 private:
     void openPath(std::string);
 
-    struct libevdev *dev = NULL;
+    struct libevdev *dev = nullptr;
     int _fd = -1;
     uint64_t buttonFlags = 0;				//Curent values of all buttons
     std::vector<int> axesData; //Current values of all axis

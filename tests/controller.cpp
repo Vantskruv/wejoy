@@ -45,7 +45,7 @@ Controller::Controller(unsigned int _buttons, unsigned int _axes, __u16 vid, __u
 
     std::cout << "Creating virtual device " << deviceid << ".\n";
     //Create and initialize the device
-    struct uinput_user_dev user_dev;
+    struct uinput_user_dev user_dev{};
     memset(&user_dev, 0, sizeof(struct uinput_user_dev));
     strcpy(user_dev.name, name.c_str());
 
@@ -77,11 +77,11 @@ Controller::Controller(unsigned int _buttons, unsigned int _axes, __u16 vid, __u
     std::string path = std::string()+"/sys/devices/virtual/input/"+this->name;
     DIR *dp;
     struct dirent *dirp;
-    if ((dp = opendir(path.c_str())) == NULL) {
+    if ((dp = opendir(path.c_str())) == nullptr) {
         std::cout << "Error(" << errno << ") opening " << path << '\n';
         return;
     }
-    while ((dirp = readdir(dp)) != NULL) {
+    while ((dirp = readdir(dp)) != nullptr) {
         std::string cFile(dirp->d_name);
         //If a file that begins with 'event' is found
         if (cFile.compare(0, 5, "event") == 0) {

@@ -4,12 +4,13 @@
 # mapping and lookup tables.
 #
 
-from __future__ import print_function
 import re
 import sys
 
+
 class Bits(object):
     pass
+
 
 prefixes = [
     "EV_",
@@ -61,8 +62,9 @@ names = [
     "REP_",
 ]
 
+
 def print_bits(bits, prefix):
-    if  not hasattr(bits, prefix):
+    if not hasattr(bits, prefix):
         return
     print("static std::map<int, const char*> %s_map= {" % prefix)
     for val, name in list(getattr(bits, prefix).items()):
@@ -72,6 +74,7 @@ def print_bits(bits, prefix):
             print("\t{%s,\"%s\"}," % (name, name))
     print("};")
     print("")
+
 
 def print_map(bits):
     print("static std::map<int, std::map<int, const char*>> event_type_map = {")
@@ -89,6 +92,8 @@ def print_map(bits):
             continue
         print("\t{EV_%s,%s_MAX}," % (prefix[:-1], prefix[:-1]))
     print("};")
+
+
 def print_lookup(bits, prefix):
     if not hasattr(bits, prefix):
         return
@@ -99,6 +104,7 @@ def print_lookup(bits, prefix):
 
     for val, name in sorted(names, key=lambda e: e[1]):
         print("\t{ .name = \"%s\", .value = %s }," % (name, name))
+
 
 def print_lookup_table(bits):
     print("struct name_entry {")
@@ -121,6 +127,7 @@ def print_lookup_table(bits):
     print("};")
     print("")
 
+
 def print_mapping_table(bits):
     print("/* THIS FILE IS GENERATED, DO NOT EDIT */")
     print("")
@@ -140,9 +147,10 @@ def print_mapping_table(bits):
 
     print("#endif /* EVENT_NAMES_H */")
 
+
 def parse_define(bits, line):
     m = re.match(r"^#define\s+(\w+)\s+(\w+)", line)
-    if m == None:
+    if m is None:
         return
 
     name = m.group(1)
@@ -166,6 +174,7 @@ def parse_define(bits, line):
         b = getattr(bits, attrname)
         b[value] = name
 
+
 def parse(fp):
     bits = Bits()
 
@@ -177,8 +186,10 @@ def parse(fp):
 
     return bits
 
+
 def usage(prog):
     print("Usage: cat <files> | %s" % prog)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 1:
