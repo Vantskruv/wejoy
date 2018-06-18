@@ -32,6 +32,7 @@ public:
     int vendor_id=-1;
     int product_id=-1;
 };
+
 /**
  * Represents a joystick device. Allows data to be sampled from it.
  */

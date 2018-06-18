@@ -16,7 +16,8 @@ void updateThread(LuaScript &lScript) {
 
     int rc;
     while (bPoll) {
-        for (Joystick *joy : GLOBAL::joyList) {
+        for (auto pair : GLOBAL::joyList) {
+            auto *joy = pair.second;
             struct input_event ev{};
             rc = libevdev_next_event(joy->get_dev(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
             if (rc == 0) {
@@ -56,7 +57,6 @@ void updateThread(LuaScript &lScript) {
     }
 
 }
-
 //Called from user via lua script
 int l_send_keyboard_event(lua_State *L) {
     int type = lua_tounsigned(L, 1);
@@ -64,17 +64,30 @@ int l_send_keyboard_event(lua_State *L) {
     GLOBAL::vKeyboard.send_key_event(type, value);
     return 0;
 }
-
+Joystick* getJoystick(lua_State *L, const std::string &f) {
+    std::string id = lua_tostring(L, 1);
+    auto x = GLOBAL::joyList.find(id);
+    if (x == GLOBAL::joyList.end()) {
+        std::cout << "ERROR "+f+": Device " << id << " does not exist.\n";
+        lua_pushnumber(L, -1); //since this tried to retrieve something, default -1 as the device was missing
+        return nullptr;
+    }
+    return x->second;
+}
+CVirtualJoy* getVJoystick(lua_State *L, const std::string &f) {
+    std::string id = lua_tostring(L, 1);
+    auto x = GLOBAL::vJoyList.find(id);
+    if (x == GLOBAL::vJoyList.end()) {
+        std::cout << "ERROR "+f+": Virtual Device " << id << " does not exist.\n";
+        return nullptr;
+    }
+    return x->second;
+}
 //Called from user via lua script
 int l_get_joy_button_status_code(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_button_status_code");
+    if (joystick == nullptr) return 0;
     unsigned int type = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_button_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_button_status(joystick->get_button_index(type));
     lua_pushnumber(L, status);
     return 1;
@@ -83,14 +96,9 @@ int l_get_joy_button_status_code(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_axis_status_code(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_axis_status");
+    if (joystick == nullptr) return 0;
     unsigned int type = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_status(joystick->get_axis_index(type));
     lua_pushnumber(L, status);
     return 1;
@@ -98,14 +106,10 @@ int l_get_joy_axis_status_code(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_button_status(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_button_status");
+    if (joystick == nullptr) return 0;
     unsigned int index = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_button_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    int status = GLOBAL::joyList[id]->get_button_status(index);
+    int status = joystick->get_button_status(index);
     lua_pushnumber(L, status);
     return 1;
 }
@@ -113,42 +117,18 @@ int l_get_joy_button_status(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_axis_status(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_axis_status");
+    if (joystick == nullptr) return 0;
     unsigned int index = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    int status = GLOBAL::joyList[id]->get_axis_status(index);
+    int status = joystick->get_axis_status(index);
     lua_pushnumber(L, status);
     return 1;
 }
-
-//Called from user via lua script
-int l_send_vjoy_button_event(lua_State *_L) {
-    unsigned int id = lua_tounsigned(_L, 1);
-    unsigned int type = lua_tounsigned(_L, 2);
-    auto value = static_cast<int>(lua_tointeger(_L, 3));
-
-    if (id >= GLOBAL::vJoyList.size()) {
-        std::cout << "ERROR send_vjoy_button_event: Virtual device " << id << " does not exist.\n";
-        return 0;
-    }//if
-    GLOBAL::vJoyList[id]->send_button_event(type, value);
-    return 0;
-}
-
 //Called from user via lua script
 int l_get_joy_axis_min(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_axis_min");
+    if (joystick == nullptr) return 0;
     unsigned int index = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_min(joystick->get_axis_type(index));
     lua_pushnumber(L, status);
     return 1;
@@ -157,14 +137,9 @@ int l_get_joy_axis_min(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_axis_min_code(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_axis_min_code");
+    if (joystick == nullptr) return 0;
     unsigned int type = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_min(type);
     lua_pushnumber(L, status);
     return 1;
@@ -172,14 +147,9 @@ int l_get_joy_axis_min_code(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_axis_max(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_axis_max");
+    if (joystick == nullptr) return 0;
     unsigned int index = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_max(joystick->get_axis_type(index));
     lua_pushnumber(L, status);
     return 1;
@@ -187,14 +157,9 @@ int l_get_joy_axis_max(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_axis_max_code(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
+    Joystick *joystick = getJoystick(L,"get_joy_axis_max_code");
+    if (joystick == nullptr) return 0;
     unsigned int type = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
     int status = joystick->get_axis_max(type);
     lua_pushnumber(L, status);
     return 1;
@@ -203,56 +168,53 @@ int l_get_joy_axis_max_code(lua_State *L) {
 
 //Called from user via lua script
 int l_get_joy_axis_count(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
+    Joystick *joystick = getJoystick(L,"get_joy_axis_count");
+    if (joystick == nullptr) return 0;
     int status = joystick->get_num_axes();
     lua_pushnumber(L, status);
     return 1;
 }
 
 int l_get_joy_button_count(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
-    if (id >= GLOBAL::joyList.size()) {
-        std::cout << "ERROR get_joy_axis_status: Device " << id << " does not exist.\n";
-        lua_pushnumber(L, -1);
-        return 1;
-    }
-    Joystick *joystick = GLOBAL::joyList[id];
+    Joystick *joystick = getJoystick(L,"get_joy_button_count");
+    if (joystick == nullptr) return 0;
     int status = joystick->get_num_buttons();
     lua_pushnumber(L, status);
     return 1;
 }
 
+
+//Called from user via lua script
+int l_send_vjoy_button_event(lua_State *_L) {
+    CVirtualJoy *joystick = getVJoystick(_L,"send_vjoy_button_event");
+    if (joystick == nullptr) return 0;
+    unsigned int type = lua_tounsigned(_L, 2);
+    auto value = static_cast<int>(lua_tointeger(_L, 3));
+    joystick->send_button_event(type, value);
+    return 0;
+}
+
 //Called from user via lua script
 int l_send_vjoy_axis_event(lua_State *_L) {
-    unsigned int id = lua_tounsigned(_L, 1);
+    CVirtualJoy *joystick = getVJoystick(_L,"send_vjoy_axis_event");
+    if (joystick == nullptr) return 0;
     unsigned int type = lua_tounsigned(_L, 2);
     auto value = static_cast<int>(lua_tointeger(_L, 3));
 
-    if (id >= GLOBAL::vJoyList.size()) {
-        std::cout << "ERROR send_vjoy_axis_event: Virtual device " << id << " does not exist.\n";
-        return 0;
-    }//if
-    GLOBAL::vJoyList[id]->send_axis_event(type, value);
+    joystick->send_axis_event(type, value);
 
     return 0;
 }
 
 //Called from user via lua script
 int l_get_vjoy_button_status(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
-    unsigned int type = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::vJoyList.size()) {
-        std::cout << "ERROR get_vjoy_button_status: Virtual device " << id << " does not exist.\n";
+    CVirtualJoy *joystick = getVJoystick(L,"get_vjoy_button_status");
+    if (joystick == nullptr) {
         lua_pushnumber(L, -1);
-        return 1;
+        return 0;
     }
-    int status = GLOBAL::vJoyList[id]->get_button_status(type);
+    unsigned int type = lua_tounsigned(L, 2);
+    int status = joystick->get_button_status(type);
     lua_pushnumber(L, status);
     return 1;
 }
@@ -260,14 +222,13 @@ int l_get_vjoy_button_status(lua_State *L) {
 
 //Called from user via lua script
 int l_get_vjoy_axis_status(lua_State *L) {
-    unsigned int id = lua_tounsigned(L, 1);
-    unsigned int type = lua_tounsigned(L, 2);
-    if (id >= GLOBAL::vJoyList.size()) {
-        std::cout << "ERROR get_vjoy_axis_status: Virtual device " << id << " does not exist.\n";
+    CVirtualJoy *joystick = getVJoystick(L,"get_vjoy_axis_status");
+    if (joystick == nullptr) {
         lua_pushnumber(L, -1);
-        return 1;
+        return 0;
     }
-    int status = GLOBAL::vJoyList[id]->get_axis_status(type);
+    unsigned int type = lua_tounsigned(L, 2);
+    int status = joystick->get_axis_status(type);
     lua_pushnumber(L, status);
     return 1;
 }
@@ -316,8 +277,7 @@ bool populate_devices(LuaScript &lScript) {
             delete cJoy;
             return false;
         }
-
-        GLOBAL::joyList.push_back(cJoy);
+        GLOBAL::joyList[i.lua_name] = cJoy;
     }//for
 
     return true;
@@ -325,24 +285,18 @@ bool populate_devices(LuaScript &lScript) {
 
 //Populate a alist of virtual devices defined in user lua file
 bool populate_virtual_devices(LuaScript &lScript) {
-    std::vector<std::array<unsigned int, 2>> dList;
-    std::array<unsigned int, 2> val{};
+    unsigned int buttons;
+    unsigned int axes;
     for (const std::string &s : lScript.getTableKeys("v_devices")) {
         bool noerr;
-        val[0] = static_cast<unsigned int>(lScript.get<int>("v_devices." + s + ".buttons", noerr));
+        buttons = lScript.get<unsigned>("v_devices." + s + ".buttons", noerr);
         if (!noerr) break;
-        val[1] = static_cast<unsigned int>(lScript.get<int>("v_devices." + s + ".axes", noerr));
+        axes = lScript.get<unsigned>("v_devices." + s + ".axes", noerr);
         if (!noerr) break;
-
-        dList.push_back(val);
-    }
-
-    //Create and populate the list of user defined virtual devices
-    for (auto &i : dList) {
-        auto *vJoy = new CVirtualJoy(i[0], i[1]);
+        auto *vJoy = new CVirtualJoy(buttons,axes,s);
         if (!vJoy->isOpen()) return false;
-        GLOBAL::vJoyList.push_back(vJoy);
-    }//for
+        GLOBAL::vJoyList[s] = vJoy;
+    }
 
     return true;
 }

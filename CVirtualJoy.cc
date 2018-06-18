@@ -4,27 +4,24 @@
 #include <cstring>    //memset
 #include <iostream> //cout
 
-static int static_deviceid = 0;        //Device incrementer
+CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes, std::string id) {
 
-CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes) {
-    deviceid = static_deviceid;
-
-    std::cout << "Opening virtual device " << deviceid << ".\n";
+    std::cout << "Opening virtual device " << id << ".\n";
     //Get a device descriptor
     fd = suinput_open();
     if (fd < 0) {
-        std::cout << "ERROR " << fd << ": Failed opening virtual device " << deviceid << ".\n";
+        std::cout << "ERROR " << fd << ": Failed opening virtual device " << id << ".\n";
         return;
     }//if
 
 
     //Setup buttons for device
     if (_buttons >= BUTTONS_SIZE)
-        std::cout << "WARNING: Number of buttons (" << _buttons << ") for virtual device " << deviceid
+        std::cout << "WARNING: Number of buttons (" << _buttons << ") for virtual device " << id
                   << " exceeds maximum allowable buttons which is " << (BUTTONS_SIZE - 1) << ".\n";
     for (unsigned int i = 0; i < _buttons && i < BUTTONS_SIZE; i++) {
         if (suinput_enable_event(fd, EV_KEY, buttons_ref::BUTTONS[i]) < 0) {
-            std::cout << "ERROR: Failed enabling event for button " << i << " on virtual device << " << deviceid
+            std::cout << "ERROR: Failed enabling event for button " << i << " on virtual device << " << id
                       << ".\n";
         }//if
     }//if
@@ -32,20 +29,20 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes) {
     //Setup axesMapping for device
 
     if (_axes >= AXES_SIZE)
-        std::cout << "WARNING: Number of axesMapping (" << _axes << ") for virtual device " << deviceid
+        std::cout << "WARNING: Number of axesMapping (" << _axes << ") for virtual device " << id
                   << " exceeds maximum allowable axesMapping which is " << (AXES_SIZE - 1) << ".\n";
     for (unsigned int i = 0; i < _axes && i < AXES_SIZE; i++) {
         if (suinput_enable_event(fd, EV_ABS, buttons_ref::AXES[i]) < 0) {
-            std::cout << "ERROR: Failed enabling event for axis " << i << " on virtual device << " << deviceid << ".\n";
+            std::cout << "ERROR: Failed enabling event for axis " << i << " on virtual device << " << id << ".\n";
         }
     }//if
     axesData.resize(_axes, 0);
 
-    std::cout << "Creating virtual device " << deviceid << ".\n";
+    std::cout << "Creating virtual device " << id << ".\n";
     //Create and initialize the device
     struct uinput_user_dev user_dev{};
     memset(&user_dev, 0, sizeof(struct uinput_user_dev));
-    std::string dName = "WeJoy Virtual Device " + std::to_string(deviceid);
+    std::string dName = "WeJoy Virtual Device " + id;
     strcpy(user_dev.name, dName.c_str());
 
     for (unsigned int i = 0; i < _axes && i < AXES_SIZE; i++) {
@@ -59,14 +56,13 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes) {
     user_dev.id.version = 1;
     int r = suinput_create(fd, &user_dev);
     if (r) {
-        std::cout << "ERROR " << r << ": Failed creating virtual device " << deviceid << ".\n";
+        std::cout << "ERROR " << r << ": Failed creating virtual device " << id << ".\n";
         suinput_destroy(fd);
         fd = -1;
         return;
     }//if
 
-    std::cout << "Successfully created virtual device " << deviceid << ".\n";
-    static_deviceid++;
+    std::cout << "Successfully created virtual device " << id << ".\n";
 }
 
 
@@ -76,10 +72,6 @@ CVirtualJoy::~CVirtualJoy() {
 
 bool CVirtualJoy::isOpen() {
     return fd >= 0;
-}
-
-int CVirtualJoy::getDeviceid() {
-    return deviceid;
 }
 
 int CVirtualJoy::get_button_status(int type) {

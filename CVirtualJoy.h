@@ -2,6 +2,7 @@
 #define CVIRTUAL_JOY_H
 
 #include <vector>
+#include <string>
 #include "suinput.h"
 
 class CVirtualJoy {
@@ -27,7 +28,7 @@ public:
 
     bool isOpen();
 
-    CVirtualJoy(unsigned int, unsigned int);    //buttons, axesMapping
+    CVirtualJoy(unsigned int, unsigned int, std::string id);    //buttons, axesMapping
     ~CVirtualJoy();
 };
 

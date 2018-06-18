@@ -143,7 +143,13 @@ inline int LuaScript::lua_get<int>(const std::string &variableName) {
     }
     return (int) lua_tonumber(L, -1);
 }
-
+template<>
+inline unsigned LuaScript::lua_get<unsigned>(const std::string &variableName) {
+    if (!lua_isnumber(L, -1)) {
+        printError(variableName, "Not a number");
+    }
+    return lua_tounsigned(L, -1);
+}
 template<>
 inline std::string LuaScript::lua_get<std::string>(const std::string &variableName) {
     std::string s = "null";
