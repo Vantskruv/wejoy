@@ -47,32 +47,17 @@ v_devices =
     --     axes = 6
     -- }
 }
-
-function scale(x, in_min, in_max, out_min, out_max)
-    return math.floor((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
-end
-
-function main()
-    for name, dev in pairs(devices) do
-        dev.min = {};
-        dev.max = {};
-        for i = 0, get_axis_count(name) - 1 do
-            dev.min[i + 1] = get_axis_min(name, i);
-            dev.max[i + 1] = get_axis_max(name, i);
-        end
-    end
-end
 function startsWith(String,Start)
     return string.sub(String,1,string.len(Start))==Start
 end
-function axis_event(device, axis, value)
+function axis_event_scaled(device, axis, value)
     if startsWith(device,"guitar") then
         local vDev = "v"..device;
-        send_axis_event(vDev, axis, scale(value, devices[device].min[axis + 1], devices[device].max[axis + 1], MIN_ABS_VAL, MAX_ABS_VAL))
+        send_axis_event(vDev, axis, value)
     end
     if startsWith(device,"accel") then
         local vDev = "vguitar"..string.sub(device,6);
-        send_axis_event(vDev, axis + 3, scale(value, devices[device].min[axis + 1], devices[device].max[axis + 1], MIN_ABS_VAL, MAX_ABS_VAL))
+        send_axis_event(vDev, axis + 3, value)
     end
 end
 

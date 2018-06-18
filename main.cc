@@ -3,13 +3,18 @@
 
 #include "LuaScript.h"
 #include "global.h"
+#include "buttons_ref.h"
 #include <libevdev-1.0/libevdev/libevdev.h>
 #include <algorithm>
 #include <dirent.h>
 #include <cstring>
+#include <cmath>
 
 bool bPoll = true;
 
+int scale(int x, int in_min, int in_max, int out_min, int out_max) {
+    return static_cast<int>(std::floor((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min));
+}
 void updateThread(LuaScript &lScript) {
     //Sleep one second to give the X11 system time to adapt.
     sleep(1);
@@ -39,9 +44,13 @@ void updateThread(LuaScript &lScript) {
 
                 } else if (ev.type == EV_ABS) {
                     int index = joy->get_axis_index(ev.code);
+                    int scaled = scale(ev.value,joy->get_axis_min(ev.code), joy->get_axis_max(ev.code),MIN_ABS_VAL,MAX_ABS_VAL);
                     lScript.call_value_function("axis_event", joy->getLuaName(), index,
                                                 ev.value);
+                    lScript.call_value_function("axis_event_scaled", joy->getLuaName(), index,
+                                                scaled);
                     lScript.call_value_function("axis_event_code", joy->getLuaName(), ev.code, ev.value);
+                    lScript.call_value_function("axis_event_code_scaled", joy->getLuaName(), ev.code, scaled);
                     lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(ev.code) + "_event",
                                                  ev.value);
                     lScript.call_device_function(joy->getLuaName() + "_a" + std::to_string(index) + "_event",
