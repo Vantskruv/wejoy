@@ -5,6 +5,8 @@
 #include "global.h"
 #include <libevdev-1.0/libevdev/libevdev.h>
 #include <algorithm>
+#include <dirent.h>
+#include <cstring>
 
 bool bPoll = true;
 
@@ -289,20 +291,27 @@ bool populate_devices(LuaScript &lScript) {
             val.vendor_id = lScript.get<int>("devices." + s + ".vendorid", noerr);
             if (!noerr) break;
         }
-        val.index = lScript.get<int>("devices." + s + ".index", noerr);
-        if (!noerr) val.index = 0;
-
+        val.wiimote = lScript.get<int>("devices." + s + ".wiimote", noerr);
+        if (!noerr) {
+            val.wiimote = -1;
+            val.index = lScript.get<int>("devices." + s + ".index", noerr);
+            if (!noerr) val.index = 0;
+        } else {
+            val.index = -1;
+        }
         dList.push_back(val);
     }
     //Populate the list of found joysticks
     for (auto &i : dList) {
-        Joystick *cJoy = new Joystick(i);
+        Joystick *cJoy = new Joystick(i, GLOBAL::wiimoteList);
         if (!cJoy->isFound()) {
+            int index = i.index;
+            if (i.index == -1) index = i.wiimote;
             if (i.name.empty()) {
                 std::cout << "WARNING: Joystick vid:" << i.vendor_id << " pid:" << i.product_id
-                          << " at index " << i.index << " is not found.\n";
+                          << " at index " << index << " is not found.\n";
             } else {
-                std::cout << "WARNING: Joystick " << i.name << "[" << i.index << "] is not found.\n";
+                std::cout << "WARNING: Joystick " << i.name << "[" << index << "] is not found.\n";
             }
             delete cJoy;
             return false;

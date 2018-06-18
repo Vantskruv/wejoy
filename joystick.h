@@ -27,7 +27,8 @@ class LuaStick {
 public:
     std::string name;
     std::string lua_name;
-    int index;
+    int index=-1;
+    int wiimote=-1;
     int vendor_id=-1;
     int product_id=-1;
 };
@@ -58,7 +59,7 @@ public:
     /**
      * Initializes an instance of Joystick, using arguments from lua
      */
-    explicit Joystick(LuaStick);
+    Joystick(LuaStick, std::vector<std::string> &wiimoteList);
 
 
     /**

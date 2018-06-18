@@ -24,8 +24,9 @@
 
 #include <cstring>
 #include <algorithm> //find
+#include <libudev.h>
 
-Joystick::Joystick(LuaStick stick) {
+Joystick::Joystick(LuaStick stick, std::vector<std::string> &wiimoteList) {
     int current = 0;
     std::string dir("/dev/input/");
 
@@ -36,6 +37,7 @@ Joystick::Joystick(LuaStick stick) {
         std::cout << "Error(" << errno << ") opening " << dir << '\n';
         return;
     }
+    struct udev *udev = udev_new();
     //Read '/dev/input' directory
     while ((dirp = readdir(dp)) != nullptr) {
         std::string cFile(dirp->d_name);
@@ -52,21 +54,46 @@ Joystick::Joystick(LuaStick stick) {
                 closeJoy();
                 continue;
             }
+
             name = libevdev_get_name(_dev);
+            if (stick.wiimote != -1) {
+                if (name.find("Nintendo Wii") == std::string::npos) {
+                    closeJoy();
+                    continue;
+                }
+                struct udev_device *uudev = udev_device_new_from_subsystem_sysname(udev, "input", cFile.c_str());
+                uudev = udev_device_get_parent_with_subsystem_devtype(uudev, "hid", NULL);
+                if (!uudev) {
+                    closeJoy();
+                    continue;
+                }
+                std::string devpath = udev_device_get_devpath(uudev);
+                udev_device_unref(uudev);
+                auto pos = std::find(wiimoteList.begin(), wiimoteList.end(), devpath);
+                if(pos == wiimoteList.end()) {
+                    wiimoteList.push_back(devpath);
+                    pos = wiimoteList.end()-1;
+                }
+                if (stick.wiimote != pos - wiimoteList.begin()) {
+                    closeJoy();
+                    continue;
+                }
+            }
             int vid = libevdev_get_id_vendor(_dev);
             int pid = libevdev_get_id_product(_dev);
             if ((vid == stick.vendor_id && pid == stick.product_id) || name == stick.name) {
-                if (current == stick.index) {
+                if (stick.index == -1 || current == stick.index) {
                     dev = _dev;
                     lua_name = stick.lua_name;
                     initMaps();
                     break;
                 }
                 current++;
-            }//if
+            }
             closeJoy();
-        }//if
+        }
     }
+    udev_unref(udev);
     closedir(dp);
 }
 

@@ -7,6 +7,7 @@
 #include "CVirtualKeyboard.h"
 
 namespace GLOBAL {
+    std::vector<std::string> wiimoteList;
     std::vector<Joystick *> joyList;
     std::vector<CVirtualJoy *> vJoyList;
     CVirtualKeyboard vKeyboard;
