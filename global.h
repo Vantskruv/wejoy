@@ -8,7 +8,8 @@
 #include "CVirtualKeyboard.h"
 
 namespace GLOBAL {
-    std::vector<std::string> wiimoteList;
+    std::map<int,std::string> wiimoteList;
+    std::vector<LuaStick> luaJoyList;
     std::map<std::string,Joystick *> joyList;
     std::map<std::string,CVirtualJoy *> vJoyList;
     CVirtualKeyboard vKeyboard;

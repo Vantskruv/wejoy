@@ -38,18 +38,18 @@ public:
  */
 class Joystick {
 private:
-    void openPath(std::string);
-
     struct libevdev *dev = nullptr;
     int _fd = -1;
     uint64_t buttonFlags = 0;				//Curent values of all buttons
     std::vector<int> axesData; //Current values of all axis
     std::string name;
     std::string lua_name;
+    std::string path;
     std::vector<int> axisMappings;
     std::vector<int> buttonMappings;
     std::map<int,int> axisMappingsRev;
     std::map<int,int> buttonMappingsRev;
+    LuaStick stick;
 
     void initMaps();
 
@@ -57,10 +57,12 @@ private:
 public:
     ~Joystick();
 
+    std::string getPath();
+
     /**
      * Initializes an instance of Joystick, using arguments from lua
      */
-    Joystick(LuaStick, std::vector<std::string> &wiimoteList);
+    Joystick(LuaStick, std::map<int,std::string> &wiimoteList);
 
 
     /**
@@ -68,7 +70,7 @@ public:
     */
     bool isFound();
 
-    void closeJoy();
+    void closeJoy(std::map<int,std::string> &wiimoteList);
 
     std::string getName() { return name; };
 
@@ -97,6 +99,10 @@ public:
     int get_axis_type(int _index);
 
     void handleEvent(input_event ev);
+
+    void set_led_state(unsigned int index, bool state);
+
+    void init(std::map<int,std::string> &wiimoteList);
 };
 
 #endif

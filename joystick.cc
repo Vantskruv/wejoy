@@ -23,78 +23,13 @@
 #include <libevdev-1.0/libevdev/libevdev.h>
 
 #include <cstring>
-#include <algorithm> //find
+#include <algorithm>
+#include <utility>
 #include <libudev.h>
 
-Joystick::Joystick(LuaStick stick, std::vector<std::string> &wiimoteList) {
-    int current = 0;
-    std::string dir("/dev/input/");
-
-    //Open '/dev/input' directory
-    DIR *dp;
-    struct dirent *dirp;
-    if ((dp = opendir(dir.c_str())) == nullptr) {
-        std::cout << "Error(" << errno << ") opening " << dir << '\n';
-        return;
-    }
-    struct udev *udev = udev_new();
-    //Read '/dev/input' directory
-    while ((dirp = readdir(dp)) != nullptr) {
-        std::string cFile(dirp->d_name);
-        //If a file that begins with 'event' is found
-        if (cFile.compare(0, 5, "event") == 0) {
-            openPath("/dev/input/" + cFile);
-            int rc = 1;
-            struct libevdev *_dev = nullptr;
-            rc = libevdev_new_from_fd(_fd, &_dev);
-            if (rc < 0) {
-                fprintf(stderr, "Skipping device /dev/input/%s, as it reported an error: (%s)\n", dirp->d_name,
-                        strerror(-rc));
-                //skip invalid devices
-                closeJoy();
-                continue;
-            }
-
-            name = libevdev_get_name(_dev);
-            if (stick.wiimote != -1) {
-                if (name.find("Nintendo Wii") == std::string::npos) {
-                    closeJoy();
-                    continue;
-                }
-                struct udev_device *uudev = udev_device_new_from_subsystem_sysname(udev, "input", cFile.c_str());
-                uudev = udev_device_get_parent_with_subsystem_devtype(uudev, "hid", NULL);
-                if (!uudev) {
-                    closeJoy();
-                    continue;
-                }
-                std::string devpath = udev_device_get_devpath(uudev);
-                udev_device_unref(uudev);
-                auto pos = std::find(wiimoteList.begin(), wiimoteList.end(), devpath);
-                if(pos == wiimoteList.end()) {
-                    wiimoteList.push_back(devpath);
-                    pos = wiimoteList.end()-1;
-                }
-                if (stick.wiimote != pos - wiimoteList.begin()) {
-                    closeJoy();
-                    continue;
-                }
-            }
-            int vid = libevdev_get_id_vendor(_dev);
-            int pid = libevdev_get_id_product(_dev);
-            if ((vid == stick.vendor_id && pid == stick.product_id) || name == stick.name) {
-                if (stick.index == -1 || current == stick.index) {
-                    dev = _dev;
-                    lua_name = stick.lua_name;
-                    initMaps();
-                    break;
-                }
-                current++;
-            }
-            closeJoy();
-        }
-    }
-    udev_unref(udev);
-    closedir(dp);
+Joystick::Joystick(LuaStick stick, std::map<int,std::string> &wiimoteList) {
+    this->stick = std::move(stick);
+    init(wiimoteList);
 }
 
 void Joystick::initMaps() {
@@ -114,13 +49,13 @@ void Joystick::initMaps() {
     }
 }
 
-void Joystick::openPath(std::string devicePath) {
-    _fd = open(devicePath.c_str(), O_RDONLY | O_NONBLOCK);
-}
-
-void Joystick::closeJoy() {
+void Joystick::closeJoy(std::map<int,std::string> &wiimoteList) {
     close(_fd);
     _fd = -1;
+    path = "";
+    if (stick.wiimote != -1) {
+        wiimoteList.erase(stick.wiimote);
+    }
 }
 
 void Joystick::handleEvent(input_event ev) {
@@ -179,4 +114,92 @@ unsigned int Joystick::get_num_buttons() {
 
 unsigned int Joystick::get_num_axes() {
     return axisMappings.size();
+}
+
+void Joystick::set_led_state(unsigned int index, bool state) {
+    std::cout << libevdev_kernel_set_led_value(dev,index,state?LIBEVDEV_LED_ON:LIBEVDEV_LED_OFF) << std::endl;
+}
+
+std::string Joystick::getPath() {
+    return path;
+}
+
+void Joystick::init(std::map<int,std::string> &wiimoteList) {
+    int current = 0;
+    std::string dir("/dev/input/");
+
+    //Open '/dev/input' directory
+    DIR *dp;
+    struct dirent *dirp;
+    if ((dp = opendir(dir.c_str())) == nullptr) {
+        std::cout << "Error(" << errno << ") opening " << dir << '\n';
+        return;
+    }
+    struct udev *udev = udev_new();
+    //Read '/dev/input' directory
+    while ((dirp = readdir(dp)) != nullptr) {
+        std::string cFile(dirp->d_name);
+        //If a file that begins with 'event' is found
+        if (cFile.compare(0, 5, "event") == 0) {
+            std::string path = "/dev/input/" + cFile;
+            int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+            struct libevdev *_dev = nullptr;
+            int rc = libevdev_new_from_fd(fd, &_dev);
+            if (rc < 0) {
+//                fprintf(stderr, "Skipping device %s, as it reported an error: (%s)\n", path.c_str(), strerror(-rc));
+                close(fd);
+                continue;
+            }
+
+            name = libevdev_get_name(_dev);
+            if (stick.wiimote != -1) {
+                if (name.find("Nintendo Wii") == std::string::npos) {
+                    close(fd);
+                    continue;
+                }
+                struct udev_device *uudev = udev_device_new_from_subsystem_sysname(udev, "input", cFile.c_str());
+                uudev = udev_device_get_parent_with_subsystem_devtype(uudev, "hid", NULL);
+                if (!uudev) {
+                    close(fd);
+                    continue;
+                }
+                std::string devpath = udev_device_get_devpath(uudev);
+                udev_device_unref(uudev);
+                bool found = false;
+                int idFound = false;
+                for (auto &pair : wiimoteList) {
+                    if (pair.second == devpath) {
+                        found = true;
+                    }
+                    if (pair.first == stick.wiimote) {
+                        idFound = true;
+                    }
+                }
+                if (!found && idFound) {
+                    close(fd);
+                    continue;
+                }
+                if (!found) {
+                    wiimoteList[stick.wiimote] = devpath;
+                }
+            }
+            int vid = libevdev_get_id_vendor(_dev);
+            int pid = libevdev_get_id_product(_dev);
+            if ((vid == stick.vendor_id && pid == stick.product_id) || name == stick.name) {
+                if (stick.index == -1 || current == stick.index) {
+                    dev = _dev;
+                    lua_name = stick.lua_name;
+                    _fd = fd;
+                    this->path = path;
+                    libevdev_grab(_dev, LIBEVDEV_GRAB);
+                    initMaps();
+                    break;
+                }
+                current++;
+            }
+            close(fd);
+        }
+    }
+    udev_unref(udev);
+    closedir(dp);
 };
