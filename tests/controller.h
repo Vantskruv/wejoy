@@ -1,23 +1,31 @@
-#ifndef CVIRTUAL_JOY_H
-#define CVIRTUAL_JOY_H
+//
+// Created by sanjay on 5/8/18.
+//
 
+#ifndef WEJOY_CONTROLLER_H
+#define WEJOY_CONTROLLER_H
+
+
+#include "suinput.h"
 #include <vector>
 #include <string>
-#include "suinput.h"
 
-class CVirtualJoy {
+class Controller {
+
 private:
+
     int deviceid;
     int fd;                                    //Device handler id
     uint64_t buttonFlags = 0;                //Curent values of all buttons
     std::vector<int> axesData;                //Current values of all axis
+    char name[16];
+    std::string eventname;
+    std::string jsname;
 
 public:
     void set_button_flags(uint64_t _b) { buttonFlags = _b; };        //Set buttons to on or off
     const uint64_t &get_button_flags() { return buttonFlags; };        //Get the status of button states.
-    int get_button_status(int);                                                //Get defined button state
     void set_axis_data(int t, int v) { axesData[t] = v; };        //Set defined axis data
-    int get_axis_status(int t) { return axesData[t]; };        //Get defined axis data
 
 
     void send_button_event(int, int);
@@ -28,9 +36,9 @@ public:
 
     bool isOpen();
 
-    CVirtualJoy(unsigned int, unsigned int, std::string id);    //buttons, axesMapping
-    ~CVirtualJoy();
+    Controller(unsigned int, unsigned int, __u16, __u16, std::string);    //buttons, axesMapping
+    ~Controller();
 };
 
 
-#endif
+#endif //WEJOY_CONTROLLER_H

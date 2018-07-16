@@ -2,15 +2,17 @@
 #define GLOBAL_H
 
 #include <vector>
+#include <map>
 #include "joystick.h"
 #include "CVirtualJoy.h"
 #include "CVirtualKeyboard.h"
 
-namespace GLOBAL
-{
-	std::vector<Joystick*> joyList;
-	std::vector<CVirtualJoy*> vJoyList;
-	CVirtualKeyboard vKeyboard;
+namespace GLOBAL {
+    std::map<int,std::string> wiimoteList;
+    std::vector<LuaStick> luaJoyList;
+    std::map<std::string,Joystick *> joyList;
+    std::map<std::string,CVirtualJoy *> vJoyList;
+    CVirtualKeyboard vKeyboard;
 }
 
 #endif
