@@ -106,7 +106,7 @@ class Joystick
 		* zero-indexed number.
 		*/
 		Joystick(int joystickNumber);
-		Joystick(int, int);
+                Joystick(int, int, std::vector<Joystick*>);
 
 		/**
 		* Initialises an instance for the joystick device specified.
@@ -130,6 +130,7 @@ class Joystick
 		unsigned int getJoyNum(){return joyNum;};
 		int getVendorID(){return vendorid;};
 		int getProductID(){return productid;};
+                std::string getDevicePath(){return _devicePath;};
 		void addListener(void(*)(void*, int, int, int), int, int);		//Listener, event and type
 
 		unsigned int get_num_buttons();
