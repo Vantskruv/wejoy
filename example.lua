@@ -14,7 +14,7 @@ devices =
 	}
 }
 
---Virtual devices to create, current limit is maximum 54 (0 to 53) buttons and 19 (0 to 18) axes. Note that not every button or axis is fully tested to work.
+--Virtual devices to create, current limit is maximum 53 (0 to 52) buttons and 19 (0 to 18) axes. Note that not every button or axis is fully tested to work.
 --Creating more than one virtual devices is possible, making room for more buttons and axes.
 v_devices = 
 {
