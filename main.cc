@@ -157,7 +157,7 @@ bool populate_devices(LuaScript& lScript)
 	//Populate the list of found joysticks
 	for(unsigned int i=0; i<dList.size(); i++)
 	{
-		Joystick* cJoy = new Joystick(dList[i][0], dList[i][1]);
+	        Joystick* cJoy = new Joystick(dList[i][0], dList[i][1], GLOBAL::joyList);
 		if(!cJoy->isFound())
 		{
 			std::cout << "WARNING: Joystick " << std::hex << dList[i][0] << ":" << std::hex << dList[i][1] << " is not found.\n";

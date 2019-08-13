@@ -33,12 +33,12 @@
 
 #define KEY_MAX 				0x2ff
 #define BTN_MISC				0x100
-typedef unsigned char   		__u8;
-typedef uint16_t        		__u16;
-#define JSIOCGAXES              _IOR('j', 0x11, __u8)                           /* get number of axes */
-#define JSIOCGBUTTONS           _IOR('j', 0x12, __u8)							/* get number of buttons */
-#define JSIOCGBTNMAP            _IOR('j', 0x34, __u16[KEY_MAX - BTN_MISC + 1])  /* get button mapping */
-#define JSIOCGAXMAP             _IOR('j', 0x32, __u8[ABS_CNT])					/* get axis mapping */
+typedef unsigned char                   __u8;
+typedef uint16_t                        __u16;
+#define JSIOCGAXES              _IOR('j', 0x11, __u8)                          /* get number of axes */
+#define JSIOCGBUTTONS           _IOR('j', 0x12, __u8)                          /* get number of buttons */
+#define JSIOCGBTNMAP            _IOR('j', 0x34, __u16[KEY_MAX - BTN_MISC + 1]) /* get button mapping */
+#define JSIOCGAXMAP             _IOR('j', 0x32, __u8[ABS_CNT])                 /* get axis mapping */
 
 
 Joystick::Joystick(int joystickNumber)
@@ -55,7 +55,7 @@ Joystick::Joystick(int joystickNumber)
 	axesData.resize(axisMappings.size(), 0);
 }
 
-Joystick::Joystick(int _vendorid, int _productid)
+Joystick::Joystick(int _vendorid, int _productid, std::vector<Joystick*> currentList)
 {
 	std::vector<unsigned int> lJSDevices;
 	std::string dir("/dev/input/");
@@ -67,12 +67,25 @@ Joystick::Joystick(int _vendorid, int _productid)
 	{
         std::cout << "Error(" << errno << ") opening " << dir << '\n';
         return;
-    }
+	}//if
 
 	//Read '/dev/input' directory
     while ((dirp = readdir(dp)) != NULL)
 	{
     	std::string cFile(dirp->d_name);
+
+	        //In case identical model devices are being used, don't add same model INSTANCE twice
+	        bool duplicateDevicePathDetected = false;
+		for(unsigned int i=0; i<currentList.size(); i++)
+		{
+		        if(currentList[i]->getDevicePath().compare("/dev/input/" + cFile) == 0)
+			{
+			        duplicateDevicePathDetected = true;
+				break;
+			}//if
+		}//for
+		if(duplicateDevicePathDetected) continue;
+
 		//If a file that begins with 'js' is found
 		if(cFile.compare(0, 2, "js") == 0)
 		{
@@ -89,7 +102,7 @@ Joystick::Joystick(int _vendorid, int _productid)
 			}
 			lJSDevices.push_back(num);
 		}//if
-    }
+	}//while
     closedir(dp);
 
 

@@ -21,7 +21,7 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes)
 
 
 	//Setup buttons for device
-	if(_buttons>=BUTTONS_SIZE) std::cout << "WARNING: Number of buttons (" << _buttons << ") for virtual device " << deviceid << " exceeds maximum allowable buttons which is " << (BUTTONS_SIZE - 1) << ".\n";
+	if(_buttons>BUTTONS_SIZE) std::cout << "WARNING: Number of buttons (" << _buttons << ") for virtual device " << deviceid << " exceeds maximum allowable buttons which is " << (BUTTONS_SIZE - 1) << ".\n";
 	for(unsigned int i=0; i<_buttons && i<BUTTONS_SIZE; i++)
 	{
 		if(suinput_enable_event(fd, EV_KEY, buttons_ref::BUTTONS[i])<0)
@@ -32,7 +32,7 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes)
 
 	//Setup axes for device
 	
-	if(_axes>=AXES_SIZE) std::cout << "WARNING: Number of axes (" << _axes << ") for virtual device " << deviceid << " exceeds maximum allowable axes which is " << (AXES_SIZE - 1) << ".\n";
+	if(_axes>AXES_SIZE) std::cout << "WARNING: Number of axes (" << _axes << ") for virtual device " << deviceid << " exceeds maximum allowable axes which is " << (AXES_SIZE - 1) << ".\n";
 	for(unsigned int i=0; i<_axes && i<AXES_SIZE; i++)
 	{
 		if(suinput_enable_event(fd, EV_ABS, buttons_ref::AXES[i])<0)
