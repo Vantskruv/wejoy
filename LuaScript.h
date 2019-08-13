@@ -71,7 +71,7 @@ public:
             }
             
             if(lua_isnil(L, -1)) {
-              printError(variableName, "1:At level " + std::to_string(level) + ", " + var + " is not defined");
+              //printError(variableName, "1:At level " + std::to_string(level) + ", " + var + " is not defined");
               return false;
             } else {
               var = "";
@@ -87,7 +87,7 @@ public:
           lua_getfield(L, -1, var.c_str());
         }
         if(lua_isnil(L, -1)) {
-            printError(variableName, "2:At level " + std::to_string(level) + ", " + var + " is not defined");
+            //printError(variableName, "2:At level " + std::to_string(level) + ", " + var + " is not defined");
             return false;
         }
 
