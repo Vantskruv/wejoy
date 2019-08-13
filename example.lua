@@ -11,9 +11,9 @@ devices =
 	{
 		vendorid = 0x044f,
 		productid = 0x0404,
-	}
+	},
 	
-	kbd0 = "/dev/input/by-id/usb-04d9_USB_Keyboard-event-kbd"  -- keyboard device (try to find a suitable device by listing input devices by typing 'ls /dev/input/by-id/' )
+	kbd0 = "/dev/input/by-id/usb-04d9_USB_Keyboard-event-kbd",  -- keyboard device (try to find a suitable device by listing input devices by typing 'ls /dev/input/by-id/' )
 	kbd1 = "/dev/input/by-id/usb-Aqua_Computer_GmbH___Co._KG_aquaero_07538-20376-event-kbd" -- another keyboard device example
 }
 
