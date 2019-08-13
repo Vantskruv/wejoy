@@ -6,7 +6,6 @@
 
 CVirtualKeyboard::CVirtualKeyboard()
 {
-	std::cout << "Opening virtual keyboard device.\n";
 	//Get a device descriptor
 	fd = suinput_open();
 	if(fd<0)
@@ -26,7 +25,6 @@ CVirtualKeyboard::CVirtualKeyboard()
 	}//if
 	
 
-	std::cout << "Creating virtual keyboard device.\n";
 	//Create and initialize the device
 	struct uinput_user_dev user_dev;
 	memset(&user_dev, 0, sizeof(struct uinput_user_dev));

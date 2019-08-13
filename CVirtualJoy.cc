@@ -10,7 +10,6 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes)
 {
 	deviceid = static_deviceid;
 	
-	std::cout << "Opening virtual device " << deviceid << ".\n";
 	//Get a device descriptor
 	fd = suinput_open();
 	if(fd<0)
@@ -42,7 +41,6 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes)
 	}//if
 	axesData.resize(_axes, 0);
 
-	std::cout << "Creating virtual device " << deviceid << ".\n";
 	//Create and initialize the device
 	struct uinput_user_dev user_dev;
 	memset(&user_dev, 0, sizeof(struct uinput_user_dev));
