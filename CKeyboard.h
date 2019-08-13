@@ -6,24 +6,24 @@
 
 class CKeyboardEvent
 {
-    public:
-        bool isPressed;
-        char code;
+public:
+  bool isPressed;
+  char code;
 };
 
 class CKeyboard
 {
-    private:
-        int fd = -1;
-        std::string eventPath;
+private:
+  int fd = -1;
+  std::string eventPath;
 
-    public:
-        std::string getEventPath();
-        bool isOpen();
-        bool readEvent(CKeyboardEvent*);
+public:
+  std::string getEventPath();
+  bool isOpen();
+  bool readEvent(CKeyboardEvent*);
         
-        CKeyboard(std::string eventPath);
-        ~CKeyboard();
+  CKeyboard(std::string eventPath);
+  ~CKeyboard();
 };
 
 #endif

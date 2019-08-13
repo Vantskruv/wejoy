@@ -1,9 +1,9 @@
 #ifndef BUTTONS_REF_H
 #define BUTTONS_REF_H
-#include <linux/uinput.h>	//Reference to keycodes
+#include <linux/uinput.h> //Reference to keycodes
 
-#define BUTTONS_SIZE		53
-#define AXES_SIZE		19
+#define BUTTONS_SIZE      53
+#define AXES_SIZE         19
 
 namespace buttons_ref
 {
@@ -91,5 +91,3 @@ ABS_HAT3Y
 }//namespace buttons_ref
 
 #endif
-
-
