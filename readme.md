@@ -51,6 +51,12 @@ If the module uinput is not loaded on your system, you need to manually load it:
 *
 * You can quit 'wejoy' by pressing 'q' end then 'ENTER'.
 
+# Install it as a service ----
+
+If you want to have a permanent config script running, you may also install wejoy as a service by running the `installService.sh` script
+This script will create a systemd service that starts on boot and copy the script config you want to `/etc/wejoy/config.lua`.
+Example: `sudo ./installService.sh il2_missing_axis.lua`
+
 # LUA scripting ----
 * Please read the example.lua and warthog_throttle.lua to learn how to customize your script.
 * Also read the keycodes_ref.txt for keyboard reference. These variables are globally accessable in your LUA script.
