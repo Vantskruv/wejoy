@@ -1,0 +1,12 @@
+[Unit]
+Description=wejoy
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/wejoy /etc/wejoy/config.lua
+Restart=always
+Environment=PATH=/usr/bin:/usr/local/bin
+WorkingDirectory=/etc/wejoy
+
+[Install]
+WantedBy=multi-user.target

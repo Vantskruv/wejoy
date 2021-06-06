@@ -289,7 +289,7 @@ int main(int argc, char** argv)
   std::thread threadUpdateJoysticks(updateThreadJoysticks, std::ref(lScript));
   std::thread threadUpdateKeyboard(updateThreadKeyboard, std::ref(lScript));
 	
-  while(getchar()!='q');
+  while(getchar()!='q') { sleep(10);};
   bPoll = false,
     threadUpdateJoysticks.join();
   threadUpdateKeyboard.join();
