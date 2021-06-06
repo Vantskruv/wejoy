@@ -57,6 +57,10 @@ If you want to have a permanent config script running, you may also install wejo
 This script will create a systemd service that starts on boot and copy the script config you want to `/etc/wejoy/config.lua`.
 Example: `sudo ./installService.sh il2_missing_axis.lua`
 
+# Run it with a steam game
+
+If you only want to run it with a steam game, you can set the game's launch options as: `/route/to/wejoy-run.sh %command%`. This way wejoy will launch automatically when you launch that game. You can also clone the SH file and customize a lua config script for each game.
+
 # LUA scripting ----
 * Please read the example.lua and warthog_throttle.lua to learn how to customize your script.
 * Also read the keycodes_ref.txt for keyboard reference. These variables are globally accessable in your LUA script.
