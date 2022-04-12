@@ -10,7 +10,7 @@ CVirtualKeyboard::CVirtualKeyboard()
   fd = suinput_open();
   if(fd<0)
     {
-      std::cout << "ERROR " << fd << ": Failed opening virtual keyboard device.\n";
+      std::cout << "ERROR " << fd << ": Failed opening virtual keyboard device.\nIs 'uinput' module loaded?\n";
       return;
     }//if
 

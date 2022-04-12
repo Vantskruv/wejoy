@@ -14,7 +14,7 @@ CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes)
   fd = suinput_open();
   if(fd<0)
     {
-      std::cout << "ERROR " << fd << ": Failed opening virtual device " << deviceid << ".\n";
+      std::cout << "ERROR " << fd << ": Failed opening virtual device " << deviceid << ".\nIs 'uinput' module loaded?\n";
       return;
     }//if
 
