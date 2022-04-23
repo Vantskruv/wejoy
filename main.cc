@@ -62,7 +62,7 @@ bool check_uinput_loaded()
   std::ifstream version_file;
   std::ifstream builtin_file;
   std::ifstream modules_file;
-  
+
   version_file.open("/proc/version");
 
   // kernel_version is third "word" from version_file
