@@ -1,3 +1,4 @@
+#include <fstream>
 #include <unistd.h> //sleep
 #include <thread>   //thread
 #include <mutex>
@@ -51,6 +52,54 @@ void updateThreadKeyboard(LuaScript& lScript)
             }//if
 	}//for
     }//while
+}
+
+bool check_uinput_loaded()
+{
+  bool uinput_loaded = false;
+  std::string this_line;
+  std::string kernel_version;
+  std::ifstream version_file;
+  std::ifstream builtin_file;
+  std::ifstream modules_file;
+
+  version_file.open("/proc/version");
+
+  // kernel_version is third "word" from version_file
+  version_file >> kernel_version;
+  version_file >> kernel_version;
+  version_file >> kernel_version;
+
+  modules_file.open("/proc/modules");
+  if ( modules_file.is_open() )
+    {
+      while ( getline(modules_file, this_line) )
+	{
+	  if ( this_line.find("uinput ") == 0 )
+	    {
+	      uinput_loaded = true;
+	      break;
+	    }
+	}
+      modules_file.close();
+    }
+
+  builtin_file.open("/lib/modules/" + kernel_version + "/modules.builtin");
+  if ( builtin_file.is_open() )
+    {
+      while ( getline(builtin_file, this_line) )
+	{
+	  // TODO: modules.builtin CHECK LINE SYNTAX!!
+	  if ( this_line.find("kernel/drivers/input/misc/uinput") == 0 )
+	    {
+	      uinput_loaded = true;
+	      break;
+	    }
+	}
+      builtin_file.close();
+    }
+
+  return uinput_loaded;
 }
 
 //Called from user via lua script
@@ -274,6 +323,12 @@ int main(int argc, char** argv)
       return 0;
     }
 
+  if (!check_uinput_loaded())
+    {
+      std::cout << "\nThe uinput module is neither loaded nor built-in to the kernel.";
+      std::cout << "\nThe uinput module MUST be loaded for WeJoy to operate correctly.\n";
+      return 0;
+    }
 
   //Open the user lua file.
   LuaScript lScript(argv[1]);
