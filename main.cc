@@ -1,6 +1,7 @@
 #include <unistd.h> //sleep
 #include <thread>   //thread
 #include <mutex>
+#include <array>
 
 #include "LuaScript.h"
 #include "global.h"
