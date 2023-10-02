@@ -14,6 +14,7 @@
 #ifndef __JOYSTICK_HH__
 #define __JOYSTICK_HH__
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <linux/input.h> //EV_KEY, EV_ABS
