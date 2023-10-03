@@ -2,12 +2,15 @@
 #define CKEYBOARD_HEADER
 
 #include <string>
-
+#include <set>
 
 class CKeyboardEvent
 {
 public:
-  bool isPressed;
+  static const int RELEASED = 0;
+  static const int PRESSED = 1;
+  static const int REPEATED = 2; // Not used
+  int state;
   char code;
 };
 
@@ -18,6 +21,8 @@ private:
   std::string eventPath;
 
 public:
+  std::set<int> pressedKeys;
+
   std::string getEventPath();
   bool isOpen();
   bool readEvent(CKeyboardEvent*);

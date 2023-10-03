@@ -11,7 +11,7 @@
 CKeyboard::CKeyboard(std::string _eventPath)
 {
   eventPath = _eventPath;
-  fd = open(eventPath.c_str(), O_RDONLY);
+  fd = open(eventPath.c_str(), O_RDONLY | O_NONBLOCK);
   if(fd == -1)
     {
       fprintf(stderr, "KEYBOARD: Cannot open %s: %s.\n", eventPath.c_str(), strerror(errno));
@@ -52,9 +52,13 @@ bool CKeyboard::readEvent(CKeyboardEvent* _keyEvent)
   n = read(fd, &ev, sizeof ev);
   if(n == ((ssize_t) - 1) || n!= sizeof(ev)) return false;
 
-  if(ev.type == EV_KEY && ev.value>=0 && ev.value<=2 && ev.value!=2)
+  if(ev.type == EV_KEY)
     {
-      _keyEvent->isPressed = ev.value;
+      if(ev.value == 0) pressedKeys.erase(ev.code);
+      else if(ev.value == 1) pressedKeys.insert(ev.code);
+      else return false;
+              
+      _keyEvent->state = ev.value;
       _keyEvent->code = ev.code;
       //printf("%s 0x%04x (%d) %d\n", evval[ev.value], (int)ev.code, (int)ev.code, (ev.code == KEY_Q ? 1 : 0));
       return true;

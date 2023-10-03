@@ -49,10 +49,18 @@ void updateThreadKeyboard(LuaScript& lScript)
             if(GLOBAL::kbdList[i]->readEvent(&kbdEvent))
             {
                 mtx.lock();
-                if(kbdEvent.isPressed) lScript.call_device_function("kbd" + std::to_string(i) + "_pressed", kbdEvent.code);
-                else lScript.call_device_function("kbd" + std::to_string(i) + "_released", kbdEvent.code);
+                if(kbdEvent.state == CKeyboardEvent::PRESSED) lScript.call_device_function("kbd" + std::to_string(i) + "_pressed", kbdEvent.code);
+                else if (kbdEvent.state == CKeyboardEvent::RELEASED) lScript.call_device_function("kbd" + std::to_string(i) + "_released", kbdEvent.code);
+
                 mtx.unlock();
             }//if
+	    else
+	    {
+              for(auto pressedKey : GLOBAL::kbdList[i]->pressedKeys)
+	      {
+	        lScript.call_device_function("kbd" + std::to_string(i) + "_down", pressedKey);
+	      }
+	    }
        }//for
     }//while
 }
