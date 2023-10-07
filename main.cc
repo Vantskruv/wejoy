@@ -217,8 +217,11 @@ bool populate_devices(LuaScript& lScript)
         bool noerr;
         std::string kbdEventPath = lScript.get<std::string>("devices.kbd" + std::to_string(cIndex), noerr);
         if(!noerr) break;
+
         CKeyboard* nKBG = new CKeyboard(kbdEventPath);
-        GLOBAL::kbdList.push_back(nKBG);
+		if(nKBG->isOpen()) GLOBAL::kbdList.push_back(nKBG);
+		else {delete nKBG; return false;}
+
         cIndex++;
     }//while
 
@@ -228,6 +231,8 @@ bool populate_devices(LuaScript& lScript)
 //Populate a alist of virtual devices defined in user lua file
 bool populate_virtual_devices(LuaScript& lScript)
 {
+	GLOBAL::vKeyboard = new CVirtualKeyboard();
+
 	std::vector<std::array<int, 2>> dList;
 	std::array<int, 2> val;
 	int cIndex = 0;
@@ -249,11 +254,9 @@ bool populate_virtual_devices(LuaScript& lScript)
 	for(unsigned int i=0; i<dList.size(); i++)
 	{
 		CVirtualJoy* vJoy = new CVirtualJoy(dList[i][0], dList[i][1]);
-		if (!vJoy->isOpen()) return false;
+		if (!vJoy->isOpen()){ delete vJoy; return false;}
 		GLOBAL::vJoyList.push_back(vJoy);
 	}//for
-
-    GLOBAL::vKeyboard = new CVirtualKeyboard();
 
 	return true;
 }
@@ -281,11 +284,21 @@ void exit_handler(int signum)
 	cv_signal.notify_one();
 }
 
+void cleanup()
+{
+	std::cout << "Cleaning up memory ...\n";
+	for(unsigned int i=0; i<GLOBAL::kbdList.size(); i++) delete GLOBAL::kbdList[i];
+	for(unsigned int i=0; i<GLOBAL::joyList.size(); i++) delete GLOBAL::joyList[i];
+	for(unsigned int i=0; i<GLOBAL::vJoyList.size(); i++) delete GLOBAL::vJoyList[i];
+
+   	if(GLOBAL::vKeyboard) delete GLOBAL::vKeyboard;
+}
+
 int main(int argc, char** argv)
 {
 	//TODO I need to search for information on which buttons and axes is required to correctly be found in applications, as sometimes i.e. axes are found in system, but not by applications.
 
-	std::cout << "WeJoy v0.2 by Johannes Bergmark\n";
+	std::cout << "WeJoy v0.3 by Johannes Bergmark\n";
 	
 	if(argc<2)
 	{
@@ -298,13 +311,16 @@ int main(int argc, char** argv)
 	signal(SIGINT, exit_handler);
 	signal(SIGHUP, exit_handler);
 
-
 	//Open the user lua file.
 	LuaScript lScript(argv[1]);
-	if(!lScript.isOpen()) return 0;
 
-	if (!populate_devices(lScript)) exit(0);
-	if (!populate_virtual_devices(lScript)) exit(0);
+	if(!lScript.isOpen() || !populate_devices(lScript) || !populate_virtual_devices(lScript))
+	{
+		cleanup();
+		std::cout << "WeJoy failed to start because of errors.\n";
+		return 1;
+	}
+
 	link_lua_functions(lScript);
 
 	std::cout << "Press 'Ctrl C' to quit.\n";	
@@ -318,15 +334,11 @@ int main(int argc, char** argv)
 	bPoll = false;
 
 	std::cout << "\nClosing threads ...\n";
-        threadUpdateJoysticks.join();
+	threadUpdateJoysticks.join();
 	threadUpdateKeyboard.join();
 	sleep(1);
 
-	std::cout << "Cleaning up memory ...\n";
-	for(unsigned int i=0; i<GLOBAL::kbdList.size(); i++) delete GLOBAL::kbdList[i];
-    	delete GLOBAL::vKeyboard;
-
+	cleanup();
 	std::cout << "See you later, goodbye!\n";
-
 	return 0;
 }
