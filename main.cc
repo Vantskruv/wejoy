@@ -43,25 +43,26 @@ void updateThreadKeyboard(LuaScript& lScript)
     CKeyboardEvent kbdEvent;
 	while(bPoll)
     {
-       usleep(1000);
-       for(unsigned int i=0; i<GLOBAL::kbdList.size(); i++)
-       {
-            if(GLOBAL::kbdList[i]->readEvent(&kbdEvent))
-            {
-                mtx.lock();
-                if(kbdEvent.state == CKeyboardEvent::PRESSED) lScript.call_device_function("kbd" + std::to_string(i) + "_pressed", kbdEvent.code);
-                else if (kbdEvent.state == CKeyboardEvent::RELEASED) lScript.call_device_function("kbd" + std::to_string(i) + "_released", kbdEvent.code);
-
-                mtx.unlock();
-            }//if
-	    else
-	    {
-              for(auto pressedKey : GLOBAL::kbdList[i]->pressedKeys)
-	      {
-	        lScript.call_device_function("kbd" + std::to_string(i) + "_down", pressedKey);
-	      }
-	    }
-       }//for
+		usleep(1000);
+		for(unsigned int i=0; i<GLOBAL::kbdList.size(); i++)
+       	{
+			if(GLOBAL::kbdList[i]->readEvent(&kbdEvent))
+			{
+				mtx.lock();
+				if(kbdEvent.state == CKeyboardEvent::PRESSED) lScript.call_device_function("kbd" + std::to_string(i) + "_pressed", kbdEvent.code);
+				else if (kbdEvent.state == CKeyboardEvent::RELEASED) lScript.call_device_function("kbd" + std::to_string(i) + "_released", kbdEvent.code);
+				mtx.unlock();
+			}//if
+			else if(GLOBAL::kbdList[i]->call_kbd_down_LuaFunction)
+			{
+				for(auto pressedKey : GLOBAL::kbdList[i]->pressedKeys)
+				{
+					mtx.lock();
+					lScript.call_device_function("kbd" + std::to_string(i) + "_down", pressedKey);
+					mtx.unlock();
+				}
+			}
+		}//for
     }//while
 }
 
@@ -224,6 +225,12 @@ bool populate_devices(LuaScript& lScript)
 
         cIndex++;
     }//while
+
+	//Check if kbd_down function exist in Lua script (to save performance)
+	for(unsigned int i=0; i<GLOBAL::kbdList.size(); i++)
+	{
+		if(lScript.doFunctionExist("kbd" + std::to_string(i) + "_pressed")) GLOBAL::kbdList[i]->call_kbd_down_LuaFunction = true;
+	}
 
 	return true;
 }

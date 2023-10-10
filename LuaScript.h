@@ -16,6 +16,7 @@ class LuaScript {
 public:
   LuaScript(const std::string&);
   ~LuaScript();
+  bool doFunctionExist(const std::string& functionName);
   void printError(const std::string& variableName, const std::string& reason);
   std::vector<int> getIntVector(const std::string& name);
   std::vector<std::string> getStringVector(const std::string& name);

@@ -40,6 +40,12 @@ Where 5.x is the available liblua version of your distro.
 * This will create an executable called 'wejoy' which is run from the terminal.
 * NOTE: If another version than liblua 5.2 is installed, the make.sh needs to be edited for the current version installed.
 
+# Prepare ----
+Your user must be a member of input group to read keyboard and joystick devices.
+For an example, in Arch Linux, you can add yourself as an user in that group:
+* $ gpasswd -a user group
+where user is you and group is input.
+See respective Linux distribution how to do this.
 
 # Usage ----
 If the module uinput is not loaded on your system, you need to manually load it:

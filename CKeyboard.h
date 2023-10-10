@@ -22,6 +22,7 @@ private:
 
 public:
   std::set<int> pressedKeys;
+  bool call_kbd_down_LuaFunction = false;
 
   std::string getEventPath();
   bool isOpen();

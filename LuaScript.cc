@@ -25,6 +25,12 @@ LuaScript::~LuaScript() {
   if(L) lua_close(L);
 }
 
+bool LuaScript::doFunctionExist(const std::string& functionName)
+{
+	lua_getglobal(L, functionName.c_str());
+	return lua_isfunction(L, -1);
+}
+
 void LuaScript::printError(const std::string& variableName, const std::string& reason) {
   std::cout<<"Error: can't get ["<<variableName<<"]. "<<reason<<std::endl;
 }
