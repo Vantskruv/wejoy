@@ -5,6 +5,7 @@
 
 LuaScript::LuaScript(const std::string& filename) {
   L = luaL_newstate();
+  luaL_openlibs(L);
   if(luaL_loadfile(L, filename.c_str()) || lua_pcall(L, 0, 0, 0))
     {
       std::cout<<"Error: failed to load ("<<filename<<")"<<std::endl;
