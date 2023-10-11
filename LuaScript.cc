@@ -16,13 +16,12 @@ LuaScript::LuaScript(const std::string& filename) {
       return;
     }
 
-  if(L) luaL_openlibs(L);
-
   _set_global_keys();
 
 }
 
-LuaScript::~LuaScript() {
+LuaScript::~LuaScript()
+{
   if(L) lua_close(L);
 }
 
