@@ -1,0 +1,107 @@
+#pragma once
+#include <cstdint>
+#include <fcntl.h>
+#include <filesystem>
+#include <iostream>
+#include <libevdev-1.0/libevdev/libevdev.h>
+#include <stdexcept>
+#include <unistd.h>
+#include <vector>
+#include <string>
+
+struct DeviceData
+{
+  struct libevdev* evdev = nullptr;
+
+	uint16_t vendorid;
+	uint16_t productid;
+	std::string device_name;
+	std::string device_path;
+
+	/*
+	DeviceData(DeviceData* _copy)
+	{
+		evdev = _copy->evdev;
+		vendorid = _copy->vendorid;
+		productid = _copy->productid;
+		device_name = _copy->device_name;
+		device_path = _copy->device_path;
+	}
+	*/
+
+	DeviceData(const std::string& _device_path)
+	: device_path(_device_path)
+	{
+		int fd = open(device_name.c_str(), O_RDONLY | O_NONBLOCK);
+		struct libevdev* evdev = nullptr;
+		int rc = libevdev_new_from_fd(fd, &evdev);
+		if(rc < 0)
+		{
+			libevdev_free(evdev);
+			close(fd);
+			throw std::runtime_error("DeviceData: Failed to open " + device_name);
+		}
+
+		close(fd);
+
+		vendorid = libevdev_get_id_vendor(evdev);
+		productid = libevdev_get_id_product(evdev);
+		device_name = libevdev_get_name(evdev);
+	}
+
+	~DeviceData()
+	{
+		if(evdev)
+		{
+			libevdev_free(evdev);
+			evdev = nullptr;
+		}
+	}
+};
+
+struct SystemDeviceData
+{
+	private:
+		static inline std::vector<DeviceData*> system_device_ids;
+	public:
+		static void refresh_device_data();
+		static const std::vector<DeviceData*>& get_device_ids();
+};
+
+void SystemDeviceData::refresh_device_data()
+{
+	const std::filesystem::path dir{"/dev/input"};
+	system_device_ids.clear();
+
+	// Use a non‑throwing iterator; any error will be reported via `ec`
+	std::error_code ec;
+	for (const auto& entry : std::filesystem::directory_iterator{dir, ec})
+	{
+		if (ec)
+		{
+			std::cerr << "SystemDeviceData::refresh_device_ids: Error accessing " << entry.path() << ": " << ec.message() << '\n';
+			continue;
+		}
+
+		try
+		{
+			DeviceData* dd = new DeviceData(entry.path());
+			if(dd->vendorid != 0 && dd->productid != 0) system_device_ids.push_back(dd);
+			else delete dd;
+		}
+		catch(const std::runtime_error& re)
+		{
+			printf("SystemDeviceData::refresh_device_data: %s\n", re.what());
+		}
+	}
+
+	if (ec) std::cerr << "Finished directory iteration with error: " << ec.message() << '\n';
+}
+
+
+const std::vector<DeviceData*>& SystemDeviceData::get_device_ids()
+{
+	if(SystemDeviceData::system_device_ids.size() == 0) SystemDeviceData::refresh_device_data();
+	return SystemDeviceData::system_device_ids;
+}
+

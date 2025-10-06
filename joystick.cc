@@ -13,314 +13,177 @@
 
 #include "joystick.h"
 
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <libevdev-1.0/libevdev/libevdev.h>
 #include <fcntl.h>
 #include <iostream>
-#include <sstream>
-#include <fstream>
-
-#include <vector>
 #include "unistd.h"
-
-#include <stdexcept>
 #include <cstring>
-#include <libudev.h>
-#include <algorithm>  //find
-
-#include <sys/ioctl.h>
-
-#define KEY_MAX       0x2ff
-#define BTN_MISC      0x100
-typedef unsigned char __u8;
-typedef uint16_t      __u16;
-#define JSIOCGAXES    _IOR('j', 0x11, __u8)                          // get number of axes
-#define JSIOCGBUTTONS _IOR('j', 0x12, __u8)                          // get number of buttons
-#define JSIOCGBTNMAP  _IOR('j', 0x34, __u16[KEY_MAX - BTN_MISC + 1]) // get button mapping
-#define JSIOCGAXMAP   _IOR('j', 0x32, __u8[ABS_CNT])                 // get axis mapping
+#include <filesystem>
 
 
-Joystick::Joystick(int joystickNumber)
+Joystick::Joystick(const std::string& _device_path)
 {
-
-  if(!retrieveID(joystickNumber, vendorid, productid)) return;
-  joyNum = joystickNumber;
-
-  std::stringstream sstm;
-  sstm << "/dev/input/js" << joystickNumber;
-  openPath(sstm.str());
-
-  _get_joystick_mapping(buttonMappings, axisMappings);
-  axesData.resize(axisMappings.size(), 0);
+  open_joy(_device_path);
 }
 
-Joystick::Joystick(int _vendorid, int _productid, std::vector<Joystick*> currentList)
+bool Joystick::open_joy(const std::string& _device_path)
 {
-  std::vector<unsigned int> lJSDevices;
-  std::string dir("/dev/input/");
+  close_joy();
+  device_path = _device_path;
+  vendorid = -1;
+  productid = -1;
 
-  //Open '/dev/input' directory
-  DIR *dp;
-  struct dirent *dirp;
-  if((dp  = opendir(dir.c_str())) == NULL)
-    {
-      std::cout << "Error(" << errno << ") opening " << dir << '\n';
-      return;
-    }//if
+  int fd = open(device_path.c_str(), O_RDONLY | O_NONBLOCK);
+  int rc = libevdev_new_from_fd(fd, &evdev);
+  if(rc < 0)
+  {
+    close(fd);
+    std::cerr << "Failed to open joystick: " << std::strerror(-rc) << std::endl;
+    return false;
+  }
 
-  //Read '/dev/input' directory
-  while ((dirp = readdir(dp)) != NULL)
-    {
-      std::string cFile(dirp->d_name);
+  vendorid = libevdev_get_id_vendor(evdev);
+  productid = libevdev_get_id_product(evdev);
+  device_name = libevdev_get_name(evdev);
 
-      //In case identical model devices are being used, don't add same model INSTANCE twice
-      bool duplicateDevicePathDetected = false;
-      for(unsigned int i=0; i<currentList.size(); i++)
-	{
-	  if(currentList[i]->getDevicePath().compare("/dev/input/" + cFile) == 0)
-	    {
-	      duplicateDevicePathDetected = true;
-	      break;
-	    }//if
-	}//for
-      if(duplicateDevicePathDetected) continue;
+  for(size_t i=KEY_RESERVED; i<KEY_CNT; i++) if(libevdev_has_event_code(evdev, EV_KEY, i)) number_of_buttons++;
+  for(size_t i=ABS_X; i<ABS_CNT; i++) if(libevdev_has_event_code(evdev, EV_ABS, i)) number_of_abs++;
+  for(size_t i=REL_X; i<REL_CNT; i++) if(libevdev_has_event_code(evdev, EV_REL, i)) number_of_rels++;
 
-      //If a file that begins with 'js' is found
-      if(cFile.compare(0, 2, "js") == 0)
-	{
-	  cFile = cFile.substr(2, std::string::npos);
-	  int num;
-	  //Add the trailing number to the device list after js if the number is valid
-	  try
-	    {
-	      num = std::stoi(cFile);
-	    }
-	  catch(...)
-	    {
-	      continue;
-	    }
-	  lJSDevices.push_back(num);
-	}//if
-    }//while
-  closedir(dp);
-
-
-  for(unsigned int i=0; i<lJSDevices.size(); i++)
-    {
-      if(!retrieveID(lJSDevices[i], vendorid, productid)) continue;
-      if(vendorid == _vendorid && productid == _productid)
-	{
-	  joyNum = lJSDevices[i];
-	  openPath("/dev/input/js" + std::to_string(joyNum));
-	  _get_joystick_mapping(buttonMappings, axisMappings);
-	  axesData.resize(axisMappings.size(), 0);
-	  break;
-	}//if
-    }//for
+  return true;
 }
 
-void Joystick::openPath(std::string devicePath)
+bool Joystick::is_open()
 {
-  _fd = open(devicePath.c_str(), O_RDONLY | O_NONBLOCK);
-  _devicePath = devicePath;
-	
+  return evdev!=nullptr;
 }
 
-void Joystick::setPath(std::string devicePath)
+void Joystick::close_joy()
 {
-  _devicePath = devicePath;
-}
-
-void Joystick::openJoy()
-{
-  _fd = open(_devicePath.c_str(), O_RDONLY | O_NONBLOCK);
-}
-
-void Joystick::closeJoy()
-{
-  close(_fd);
-  _fd = -1;
-}
-
-const uint64_t Joystick::get_button_flags()
-{
-  return buttonFlags;
-}
-
-
-const uint64_t Joystick::get_axes_notify_flags()
-{
-  return axesNotifyFlags;
+  if(evdev)
+  {
+    libevdev_free(evdev);
+    evdev = nullptr;
+  }
 }
 
 int Joystick::get_button_status(int type)
 {
-  // uint64_t check = (value) ? (get_button_flags() | 1ul << type) : (get_button_flags() & ~(1uL << type));
-  // if(check==get_button_flags()) return; //Button already set, we do not need to emit the data again
-
-  return (buttonFlags & (1ul << type) ? true : false);
+  return button_data[type];
 }
 
-int Joystick::get_axis_status(int _i)
+int Joystick::get_abs_status(int _i)
 {
-  return axesData[_i];
+  return abs_data[_i];
 }
 
-
-
-bool Joystick::readJoy(JoystickEvent* event)
+int Joystick::get_rel_status(int _i)
 {
-  int bytes = read(_fd, event, sizeof(*event));
+  return rel_data[_i];
+}
 
-
-  if (bytes == -1)
+bool Joystick::read_joy(JoystickEvent* event)
+{
+  if(libevdev_next_event(evdev, LIBEVDEV_READ_FLAG_NORMAL, event) !=  LIBEVDEV_READ_STATUS_SUCCESS)
+  {
     return false;
-
-
-  if(event->type & JS_EVENT_BUTTON)
-    {
-      buttonFlags = (event->value) ? (buttonFlags | 1ul << event->number) : (buttonFlags & ~(1uL << event->number));
-    }//if
-  else if(event->type & JS_EVENT_AXIS)
-    {
-      axesData[event->number] = event->value;
-      axesNotifyFlags = 1uL << event->number;
-    }//if
-
-
-  // NOTE if this condition is not met, we're probably out of sync and this
-  // Joystick instance is likely unusable
-  return bytes == sizeof(*event);
-}
-
-void Joystick::_get_joystick_mapping(std::vector<int>& _buttons, std::vector<int>& _axes)
-{
-  uint8_t num_button = 0;	
-  ioctl(_fd, JSIOCGBUTTONS, &num_button);
-  uint8_t button_count = num_button;
-
-  uint16_t btnmap[KEY_MAX - BTN_MISC + 1];
-  if (ioctl(_fd, JSIOCGBTNMAP, btnmap) < 0)
-    {
-      std::ostringstream str;
-      str << _devicePath << ": " << std::strerror(errno);
-      throw std::runtime_error(str.str());
-    }
-  else
-    {
-      std::copy(btnmap, btnmap + button_count, std::back_inserter(_buttons));
-    }
-
-
-
-  uint8_t num_axis = 0;
-  ioctl(_fd, JSIOCGAXES, &num_axis);
-  uint8_t axis_count = num_axis;
-
-  uint8_t axismap[ABS_MAX + 1];
-  if (ioctl(_fd, JSIOCGAXMAP, axismap) < 0)
-    {
-      std::ostringstream str;
-      str << _devicePath << ": " << strerror(errno);
-      throw std::runtime_error(str.str());
-    }
-  else
-    {
-      std::copy(axismap, axismap + axis_count, std::back_inserter(_axes));
-    }
-}
-
-
-int Joystick::get_button_index(int _type)
-{
-  std::vector<int>::iterator it;
-  it = std::find(buttonMappings.begin(), buttonMappings.end(), _type);
-  if(it == buttonMappings.end()) return -1;
-	
-  return it - buttonMappings.begin();
-}
-
-int Joystick::get_axis_index(int _type)
-{
-  std::vector<int>::iterator it;
-  it = std::find(axisMappings.begin(), axisMappings.end(), _type);
-  if(it == axisMappings.end()) return -1;
-	
-  return it - axisMappings.begin();
-}
-
-
-unsigned int Joystick::get_num_buttons()
-{
-  return buttonMappings.size();
-}
-
-unsigned int Joystick::get_num_axes()
-{
-  return axisMappings.size();
-}
-
-
-bool Joystick::isFound()
-{
-  return _fd >= 0;
-}
-
-Joystick::~Joystick()
-{
-  if(_fd>=0) close(_fd);
-};
-
-
-/*
-  #define MAX_DEVICES 32
-  void Joystick::retrieveJSPaths(int* indexes)
-  {
-  int k = 0;
-  while(k<MAX_DEVICES)
-  {
-  std::stringstream path;
-  path << "/dev/input/js" << k;
-  std::ifstream in(path.str().c_str());
-  if(!in) break;
-  indexes[k] = k;
-  k++;
-  }//while
-  indexes[k] = -1;
   }
-*/
 
-bool Joystick::retrieveID(int index, int& _vendorid, int& _productid)
-{
-  // Use udev to look up the product and manufacturer IDs
-  struct udev *udev = udev_new();
-  if (udev)
-    {
-      char sysname[32];
-      std::snprintf(sysname, sizeof(sysname), "js%u", index);
-      struct udev_device *dev = udev_device_new_from_subsystem_sysname(udev, "input", sysname);
-      dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
-      if (!dev)
-	{
-	  std::cout << "Unable to find parent USB device index " << index << std::endl;
-	  udev_unref(udev);
-	  return false;
-	}
-		
-      const std::string s_vendorid = udev_device_get_sysattr_value(dev, "idVendor");
-      const std::string s_productid = udev_device_get_sysattr_value(dev, "idProduct");
-      _vendorid = strtoul(s_vendorid.c_str(), NULL, 16);
-      _productid = strtoul(s_productid.c_str(), NULL, 16);
-
-      udev_device_unref(dev);
-      udev_unref(udev);
-    }
-  else
-    {
-      std::cout << "Cannot create udev" << std::endl;
-      return false;
-    }
+  if(event->type == EV_KEY)
+  {
+    button_data[event->code] = event->value;
+  }
+  else if(event->type == EV_ABS)
+  {
+    abs_data[event->code] = event->value;
+  }
+  else if(event->type == EV_REL)
+  {
+    rel_data[event->code] = event->value;
+  }
 
   return true;
 }
+
+void Joystick::print_verbose_info()
+{
+  if(evdev == nullptr) return;
+
+  printf("Name: %s\n", libevdev_get_name(evdev));
+  printf("Vendorid: %.4x\n", vendorid);
+  printf("Productid: %.4x\n", productid);
+
+  printf("\nBTN_count: %lu\n",get_num_buttons());
+  for(int i=KEY_RESERVED; i<KEY_CNT; i++)
+  {
+    if(libevdev_has_event_code(evdev, EV_KEY, i))
+    {
+      printf("%4d : %24s\n", i, libevdev_event_code_get_name(EV_KEY, i));
+    }
+  }
+
+  printf("\nREL_count: %lu\n", number_of_rels);
+  for(int i=REL_X; i<REL_CNT; i++)
+  {
+    if(libevdev_has_event_code(evdev, EV_REL, i))
+    {
+      printf("%4d : %24s\n", i, libevdev_event_code_get_name(EV_REL, i));
+    }
+  }
+
+  printf("\nABS_count: %lu\n", number_of_abs);
+  for(int i=ABS_X; i<ABS_CNT; i++)
+  {
+    if(libevdev_has_event_code(evdev, EV_ABS, i))
+    {
+      const input_absinfo* abs_info = libevdev_get_abs_info(evdev, i);
+      printf("%4d : %24s | Min: %6d | Max: %6d | Resolution: %6d | Fuzz: %6d | Flat: %6d\n",
+      i, libevdev_event_code_get_name(EV_ABS, i), abs_info->minimum, abs_info->maximum, abs_info->resolution, abs_info->fuzz, abs_info->flat);
+    }
+  }
+}
+
+size_t Joystick::get_num_buttons()
+{
+  return number_of_buttons;
+}
+
+size_t Joystick::get_num_abs()
+{
+  return number_of_abs;
+}
+
+size_t Joystick::get_num_rel()
+{
+  return number_of_rels;
+}
+
+
+Joystick::~Joystick()
+{
+  close_joy();
+};
+
+
+std::vector<std::string> Joystick::SystemDeviceData::get_device_paths()
+{
+  const std::filesystem::path dir{"/dev/input/by-id"};
+  std::vector<std::string> system_device_paths;
+  
+  // Use a non‑throwing iterator; any error will be reported via `ec`
+  std::error_code ec;
+  for (const auto& entry : std::filesystem::directory_iterator{dir, ec})
+  {
+    if (ec)
+    {
+      std::cerr << "Joystick::SystemDeviceData::refresh_device_paths: Error accessing " << entry.path() << ": " << ec.message() << '\n';
+      continue;
+    }
+      system_device_paths.push_back(entry.path());
+  }
+
+  if (ec) std::cerr << "Finished directory iteration with error: " << ec.message() << '\n';
+
+  return system_device_paths;
+}
+

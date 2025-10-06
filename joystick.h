@@ -14,89 +14,90 @@
 #ifndef __JOYSTICK_HH__
 #define __JOYSTICK_HH__
 
+#include <bitset>
 #include <cstdint>
+#include <linux/input.h>
+#include <memory>
 #include <string>
 #include <vector>
-#include <linux/input.h> //EV_KEY, EV_ABS
+#include <array>
 
-#define JS_EVENT_BUTTON 0x01 // button pressed/released
-#define JS_EVENT_AXIS   0x02 // joystick moved
-#define JS_EVENT_INIT   0x80 // initial state of device
-
-class JoystickEvent      // Encapsulates all data relevant to a sampled joystick event.
+struct JoystickEvent : input_event      // Encapsulates all data relevant to a sampled joystick event.
 {
-public:
-  unsigned int time;     // The timestamp of the event, in milliseconds.
-  short value;           // The value associated with this joystick event.
-                         // For buttons this will be either 1 (down) or 0 (up).
-                         // For axes, this will range between -32768 and 32767.
-  unsigned char type;    // The event type.
-  unsigned char number;  // The axis/button number.
-
   bool isButton()        // Returns true if this event is the result of a button press.
   {
-    return (type & JS_EVENT_BUTTON) != 0;
+    return (type == EV_KEY);
   }
-
 
   bool isAxis()          // Returns true if this event is the result of an axis movement.
   {
-    return (type & JS_EVENT_AXIS) != 0;
+    return type == EV_ABS;
   }
 
-   bool isInitialState() // Returns true if this event is part of the initial state obtained when the joystick is first connected to.
+  bool isRel()
+  {
+    return type == EV_REL;
+  }
+
+/*
+  bool isInitialState() // Returns true if this event is part of the initial state obtained when the joystick is first connected to.
   {
     return (type & JS_EVENT_INIT) != 0;
   }
+*/
 };
 
 
 class Joystick           // Represents a joystick device. Allows data to be sampled from it.
 {
 private:
-  void openPath(std::string);
-  int _fd = -1;
-  unsigned int joyNum;
+  struct libevdev* evdev = nullptr;
   int vendorid;
   int productid;
-  std::string _devicePath;
-  uint64_t buttonFlags = 0;     //Curent values of all buttons
-  std::vector<int> axesData;    //Current values of all axis
-  uint64_t axesNotifyFlags = 0; //Tells if values are changed from last read data
-  std::vector<int> buttonMappings;
-  std::vector<int> axisMappings;
+  std::string device_name;
+  std::string device_path;
+  std::string description;
 
+  size_t number_of_buttons = 0;
+  size_t number_of_abs = 0;
+  size_t number_of_rels = 0;
+  std::array<uint8_t, KEY_CNT> button_data;   //  Current valuesfof all keys/buttons
+  std::array<int32_t, ABS_CNT> abs_data;      //  Current values of all axis
+  std::array<int32_t, REL_CNT> rel_data;      //  Current values of all relative axes
 
-  void _get_joystick_mapping(std::vector<int>&, std::vector<int>&);
-  
 public:
   ~Joystick();
+  Joystick(const std::string& devicePath);
 
-  Joystick(int joystickNumber);                 // Initialises an instance for the joystick with the specified, zero-indexed number.
-  Joystick(int, int, std::vector<Joystick*>);
-  Joystick(std::string devicePath);             // Initialises an instance for the joystick device specified.
+  bool            is_open();
+  bool            read_joy(JoystickEvent* event); // Attempts to populate the provided JoystickEvent instance with data from the joystick. Returns true if data is available, otherwise false.
+  bool            open_joy(const std::string& devicePath);
+  void            close_joy();
+  uint16_t        get_vendor_id(){return vendorid;};
+  uint16_t        get_product_id(){return productid;};
+  std::string     get_device_name() { return device_name; };
+  std::string     get_device_path(){return device_path;};
+  void            addListener(void(*)(void*, int, int, int), int, int); //Listener, event and type
+  size_t          get_num_buttons();
+  size_t          get_num_abs();
+  size_t          get_num_rel();
+  int             get_button_index(int);
+  int             get_abs_index(int);
+  int             get_button_status(int);
+  int             get_abs_status(int);
+  int             get_rel_status(int);
+  void set_description(const std::string& _description) { description = _description;};
+  const std::string& get_description() { return description;}
+  void            print_verbose_info();
+  
+  struct SystemDeviceData
+  {
+    public:
+      static std::vector<std::string> get_device_paths();
+  };
 
-  bool           isFound();                     // Returns true if the joystick was found and may be used, otherwise false.
-  bool           readJoy(JoystickEvent* event); // Attempts to populate the provided JoystickEvent instance with data from the joystick. Returns true if data is available, otherwise false.
-  void           openJoy();
-  void           closeJoy();
-  void           setPath(std::string);
-  unsigned int   getJoyNum(){return joyNum;};
-  int            getVendorID(){return vendorid;};
-  int            getProductID(){return productid;};
-  std::string    getDevicePath(){return _devicePath;};
-  void           addListener(void(*)(void*, int, int, int), int, int); //Listener, event and type
-  unsigned int   get_num_buttons();
-  unsigned int   get_num_axes();
-  int            get_button_index(int);
-  int            get_axis_index(int);
-  const uint64_t get_button_flags();
-  int            get_button_status(int);
-  int            get_axis_status(int);
-  const uint64_t get_axes_notify_flags();
-  int            get_axis_value(int _i);
-
-  static bool retrieveID(int, int&, int&);
 };
+
+
 
 #endif

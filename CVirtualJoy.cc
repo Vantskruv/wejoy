@@ -17,111 +17,159 @@
 */
 
 #include "CVirtualJoy.h"
-#include "buttons_ref.h"
 #include "suinput.h"
 #include <cstring>               //memset
 #include <iostream>              //cout
+#include <libevdev-1.0/libevdev/libevdev.h>
 
 static int static_deviceid = 0;  //Device incrementer
 
-CVirtualJoy::CVirtualJoy(unsigned int _buttons, unsigned int _axes)
+CVirtualJoy::CVirtualJoy(const std::vector<uint16_t>& _buttons, const std::vector<ABSData>& _abs, const std::vector<uint16_t>& _rel, std::string _name, uint16_t _vendorid, uint16_t _productid)
+: name(_name), vendorid(_vendorid), productid(_productid)
 {
-  deviceid = static_deviceid;
-
   //Get a device descriptor
-  fd = suinput_open();
-  if(fd<0)
+  uinput_fd = suinput_open();
+  if(uinput_fd<0)
     {
-      std::cout << "ERROR " << fd << ": Failed opening virtual device " << deviceid << ".\n";
+      std::cout << "ERROR: Failed opening virtual device.\n";
       return;
     }//if
 
-
   //Setup buttons for device
-  if(_buttons>BUTTONS_SIZE) std::cout << "WARNING: Number of buttons (" << _buttons << ") for virtual device " << deviceid << " exceeds maximum allowable buttons which is " << (BUTTONS_SIZE - 1) << ".\n";
-  for(unsigned int i=0; i<_buttons && i<BUTTONS_SIZE; i++)
+  for(const auto& button : _buttons)
+  {
+    if(suinput_enable_event(uinput_fd, EV_KEY, button) < 0)
     {
-      if(suinput_enable_event(fd, EV_KEY, buttons_ref::BUTTONS[i])<0)
-	{
-	  std::cout << "ERROR: Failed enabling event for button " << i << " on virtual device << " << deviceid << ".\n";
-	}//if
+      std::cout << "ERROR: Failed enabling event for virtual button " << button << "\n";
+      continue;
     }//if
+    available_buttons.push_back(button);
+  }//for
 
-  //Setup axes for device
-	
-  if(_axes>AXES_SIZE) std::cout << "WARNING: Number of axes (" << _axes << ") for virtual device " << deviceid << " exceeds maximum allowable axes which is " << (AXES_SIZE - 1) << ".\n";
-  for(unsigned int i=0; i<_axes && i<AXES_SIZE; i++)
+  //Setup abs axes for device
+  for(const auto& abs : _abs)
+  {
+    if(suinput_enable_event(uinput_fd, EV_ABS, abs.code)<0)
     {
-      if(suinput_enable_event(fd, EV_ABS, buttons_ref::AXES[i])<0)
-	{
-	  std::cout << "ERROR: Failed enabling event for axis " << i << " on virtual device << " << deviceid << ".\n";
-	}
+      std::cout << "ERROR: Failed enabling event for virtual absolute axis " << abs.code << ".\n";
+      continue;
     }//if
-  axesData.resize(_axes, 0);
+    available_abs.push_back(abs);
+  }//for
+
+  //Setup rel axes for device
+  for(const auto& rel : _rel)
+  {
+    if(suinput_enable_event(uinput_fd, EV_REL, rel)<0)
+    {
+      std::cout << "ERROR: Failed enabling event for virtual relative axis " << rel << ".\n";
+      continue;
+    }//if
+    available_rels.push_back(rel);
+  }//for
 
   //Create and initialize the device
   struct uinput_user_dev user_dev;
-  memset(&user_dev, 0, sizeof(struct uinput_user_dev));
-  std::string dName = "WeJoy Virtual Device " + std::to_string(deviceid);
-  strcpy(user_dev.name, dName.c_str());
 
-  for(unsigned int i=0; i<_axes && i<AXES_SIZE; i++) {
-    user_dev.absmax[i]=32767;
-    user_dev.absmin[i]=-32767;
+  for(const auto& abs : _abs)
+  {
+    user_dev.absmax[abs.code]=abs.absinfo.maximum;
+    user_dev.absmin[abs.code]=abs.absinfo.minimum;
+    user_dev.absflat[abs.code]=abs.absinfo.flat;
+    user_dev.absfuzz[abs.code]=abs.absinfo.fuzz;
   }
 
-  user_dev.id.bustype = BUS_VIRTUAL;	//TODO Should we use BUS_VIRTUAL instead of BUS_USB?
-  //user_dev.id.vendor = 0x06a3;
-  //user_dev.id.product = 0x0764;
+  user_dev.id.bustype = BUS_USB;    // BUS_VIRTUAL can be used aswell.
+  user_dev.id.vendor = vendorid;    // Use one of the unregistered ranges: 0xFE00–0xFEFF or 0xFF00–0xFFFF.
+  user_dev.id.product = productid;  // Can be used more freely, as it lies under vendorid
+
   user_dev.id.version = 1;
-  int r = suinput_create(fd, &user_dev);
+  memset(&user_dev, 0, sizeof(struct uinput_user_dev));
+  deviceid = static_deviceid++;
+  if(name.empty()) name = "WeJoy Virtual Device " + std::to_string(deviceid);
+  strcpy(user_dev.name, name.c_str());
+
+  int r = suinput_create(uinput_fd, &user_dev);
   if(r)
     {
-      std::cout <<"ERROR " << r << ": Failed creating virtual device " << deviceid << ".\n";
-      suinput_destroy(fd);
-      fd = -1;
+      std::cout <<"ERROR " << r << ": Failed creating virtual device.\n";
+      suinput_destroy(uinput_fd);
+      uinput_fd = -1;
       return;
     }//if
-
-  std::cout << "Successfully created virtual device " << deviceid << ".\n";
-  static_deviceid++;
 }
 
 
 CVirtualJoy::~CVirtualJoy()
 {
-  suinput_destroy(fd);
+  if(uinput_fd>=0) suinput_destroy(uinput_fd);
 }
 
-bool CVirtualJoy::isOpen()
+bool CVirtualJoy::is_open()
 {
-  return fd>=0;
+  return uinput_fd>=0;
 }
 
-int CVirtualJoy::getDeviceid()
+int CVirtualJoy::get_device_id()
 {
   return deviceid;
 }
 
-int CVirtualJoy::get_button_status(int type)
+void CVirtualJoy::send_button_event(uint16_t code, uint8_t value)
 {
-  return (buttonFlags & (1ul << type) ? true : false);
+  button_data[code] = value;
+  suinput_emit(uinput_fd, EV_KEY, code, value);
+  suinput_syn(uinput_fd);
 }
 
-
-void CVirtualJoy::send_button_event(int type, int value)
+void CVirtualJoy::send_abs_event(uint16_t code, uint32_t value)
 {
-  uint64_t check = (value) ? (get_button_flags() | 1ul << type) : (get_button_flags() & ~(1uL << type)); //Set new button flags state
-  if(check==get_button_flags()) return; //Button already set, we do not need to emit the data again
-  set_button_flags(check);              //Updating button flags
-
-  suinput_emit(fd, EV_KEY, buttons_ref::BUTTONS[type], value);
-  suinput_syn(fd);
+  abs_data[code] = value;
+  suinput_emit(uinput_fd, EV_ABS, code, value);
+  suinput_syn(uinput_fd);
 }
 
-void CVirtualJoy::send_axis_event(int type, int value)
+void CVirtualJoy::send_rel_event(uint16_t code, uint32_t value)
 {
-  set_axis_data(type, value);
-  suinput_emit(fd, EV_ABS, buttons_ref::AXES[type], value);
-  suinput_syn(fd);
+  rel_data[code] = value;
+  suinput_emit(uinput_fd, EV_REL, code, value);
+  suinput_syn(uinput_fd);
 }
+
+/*
+void CVirtualJoy::send_event(uint8_t type, uint16_t code, uint32_t value)
+{
+  data[type][code] = value;
+  suinput_emit(uinput_fd, type, code, value);
+  suinput_syn(uinput_fd);
+}
+*/
+
+void CVirtualJoy::print_verbose_info()
+{
+  if(!is_open()) return;
+
+  printf("Name: %s\n", name.c_str());
+  printf("Vendorid: %.4x\n", vendorid);
+  printf("Productid: %.4x\n", productid);
+
+  printf("\nBTN_count: %lu\n", get_num_buttons());
+  for(const auto& btn : available_buttons)
+  {
+    printf("%4d : %24s\n", btn, libevdev_event_code_get_name(EV_KEY, btn));
+  }
+
+  printf("\nREL_count: %lu\n", get_num_rels());
+  for(const auto& rel : available_rels)
+  {
+    printf("%4d : %24s\n", rel, libevdev_event_code_get_name(EV_REL, rel));
+  }
+
+  printf("\nABS_count: %lu\n", get_num_abs());
+  for(const auto& abs : available_abs)
+  {
+    printf("%4d : %24s | Min: %6d | Max: %6d | Fuzz: %6d | Flat: %6d\n",
+    abs.code, libevdev_event_code_get_name(EV_ABS, abs.code), abs.absinfo.minimum, abs.absinfo.maximum, abs.absinfo.fuzz, abs.absinfo.flat);
+  }
+}
+
