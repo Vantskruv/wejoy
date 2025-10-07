@@ -36,41 +36,62 @@ public:
   ~LuaScript();
   bool doFunctionExist(const std::string& functionName);
   void printError(const std::string& variableName, const std::string& reason);
-  std::vector<int> getIntVector(const std::string& name);
-  std::vector<std::string> getStringVector(const std::string& name);
+  //std::vector<int> getIntVector(const std::string& name);
+  //std::vector<std::string> getStringVector(const std::string& name);
   std::vector<std::string> getTableKeys(const std::string& name);
   //void call_device_function(const device_function&, int);
+  void call_device_function(const std::string& str_func, int event_type, int event_code, int event_value);
   void call_device_function(const std::string&, int);
   void pushcfunction(int (*)(lua_State*), const std::string&);
   bool isOpen(){return L;};
+  lua_State* get_lua_state() { return L;}
+
     
   inline void clean() {
     int n = lua_gettop(L);
     lua_pop(L, n);
   }
 
+  template <class OutT>
+  static std::vector<OutT> read_int_vector(lua_State* L, int idx)
+  {
+    std::vector<OutT> vec;
+    if (!lua_istable(L, idx)) return vec;          // nil → empty vector
+    // iterate over the table (array part)
+    lua_pushnil(L);                               // first key
+    while (lua_next(L, idx) != 0) {
+        // key is at -2, value at -1
+        if (lua_isnumber(L, -1)) {
+            vec.push_back(static_cast<OutT>(lua_tointeger(L, -1)));
+        }
+        lua_pop(L, 1); // pop value, keep key for next iteration
+    }
+    return vec;
+  }
 
-  template<typename T>
+
+
+template<typename T>
   T get(const std::string& variableName, bool& _noerr)
   {
     _noerr = true;
-	
+  
     if(!L) 
       {
-	printError(variableName, "Script is not loaded");
-	_noerr = false;
-	return lua_getdefault<T>();
+  printError(variableName, "Script is not loaded");
+  _noerr = false;
+  return lua_getdefault<T>();
       }
       
     T result;
     if(lua_gettostack(variableName))
       { // variable succesfully on top of stack
-	result = lua_get<T>(variableName);  
+  result = lua_get<T>(variableName);  
       }
     else
       {
-	_noerr = false;
-	result = lua_getdefault<T>();
+  _noerr = false;
+  result = lua_getdefault<T>();
       }
 
      
@@ -83,21 +104,21 @@ public:
     std::string var = "";
     for(unsigned int i = 0; i < variableName.size(); i++) {
       if(variableName.at(i) == '.') {
-	if(level == 0) {
-	  lua_getglobal(L, var.c_str());
-	} else {
-	  lua_getfield(L, -1, var.c_str());
-	}
+  if(level == 0) {
+    lua_getglobal(L, var.c_str());
+  } else {
+    lua_getfield(L, -1, var.c_str());
+  }
             
-	if(lua_isnil(L, -1)) {
-	  //printError(variableName, "1:At level " + std::to_string(level) + ", " + var + " is not defined");
-	  return false;
-	} else {
-	  var = "";
-	  level++;
-	}
+  if(lua_isnil(L, -1)) {
+    //printError(variableName, "1:At level " + std::to_string(level) + ", " + var + " is not defined");
+    return false;
+  } else {
+    var = "";
+    level++;
+  }
       } else {
-	var += variableName.at(i);
+  var += variableName.at(i);
       }
     }
     if(level == 0) {
@@ -169,5 +190,6 @@ template<>
 inline std::string LuaScript::lua_getdefault<std::string>() {
   return "null";
 }
+
 
 #endif
